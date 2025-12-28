@@ -107,10 +107,58 @@ struct ReceiptDetailView: View {
     }
     
     private var parsedInfoSection: some View {
-        VStack(spacing: 12) {
-            InfoRow(label: "Store", value: receipt.displayName, icon: "storefront")
-            InfoRow(label: "Date", value: receipt.formattedDate, icon: "calendar")
-            InfoRow(label: "Total", value: receipt.formattedTotal, icon: "dollarsign.circle", valueColor: .green)
+        VStack(spacing: 16) {
+            // Store Info
+            VStack(spacing: 12) {
+                InfoRow(label: "Store", value: receipt.displayName, icon: "storefront")
+                
+                if let address = receipt.storeAddress, !address.isEmpty {
+                    InfoRow(label: "Address", value: address, icon: "mappin.and.ellipse")
+                }
+                
+                if let phone = receipt.storePhone, !phone.isEmpty {
+                    InfoRow(label: "Phone", value: phone, icon: "phone")
+                }
+            }
+            
+            Divider()
+            
+            // Transaction Info
+            VStack(spacing: 12) {
+                InfoRow(label: "Date", value: receipt.formattedDate, icon: "calendar")
+                
+                if let txNumber = receipt.transactionNumber, !txNumber.isEmpty {
+                    InfoRow(label: "Receipt #", value: txNumber, icon: "number")
+                }
+                
+                InfoRow(label: "Category", value: receipt.category.rawValue, icon: receipt.category.icon)
+            }
+            
+            Divider()
+            
+            // Financial Breakdown
+            VStack(spacing: 12) {
+                if receipt.subtotal != nil {
+                    InfoRow(label: "Subtotal", value: receipt.formattedSubtotal, icon: "cart")
+                }
+                
+                if receipt.tax != nil {
+                    InfoRow(label: "Tax", value: receipt.formattedTax, icon: "percent")
+                }
+                
+                if receipt.tips != nil {
+                    InfoRow(label: "Tips", value: receipt.formattedTips, icon: "heart")
+                }
+                
+                InfoRow(label: "Total", value: receipt.formattedTotal, icon: "dollarsign.circle", valueColor: .green)
+            }
+            
+            Divider()
+            
+            // Payment Info
+            VStack(spacing: 12) {
+                InfoRow(label: "Payment", value: receipt.paymentDisplay, icon: receipt.paymentMethod.icon)
+            }
         }
         .padding()
         .background(Color(.secondarySystemBackground))

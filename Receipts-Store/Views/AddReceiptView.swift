@@ -270,15 +270,13 @@ struct AddReceiptView: View {
                 // Save image
                 let filename = try await ImageStorageService.shared.saveImage(image)
                 
-                // Create receipt
-                let receipt = Receipt(
-                    imageFileName: filename,
-                    rawText: rawText,
-                    storeName: parsedData?.storeName,
-                    transactionDate: parsedData?.parsedDate,
-                    total: parsedData?.totalAsDecimal,
-                    items: parsedData?.createReceiptItems() ?? []
-                )
+                // Create receipt using the parsed data
+                let receipt: Receipt
+                if let parsed = parsedData {
+                    receipt = parsed.createReceipt(imageFileName: filename, rawText: rawText)
+                } else {
+                    receipt = Receipt(imageFileName: filename, rawText: rawText)
+                }
                 
                 // Save to SwiftData
                 await MainActor.run {
