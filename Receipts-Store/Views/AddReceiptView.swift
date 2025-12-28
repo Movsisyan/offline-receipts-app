@@ -103,101 +103,119 @@ struct AddReceiptView: View {
     // MARK: - Mode Selection View
     
     private var modeSelectionView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
             
-            Image(systemName: "doc.text.viewfinder")
-                .font(.system(size: 80))
-                .foregroundStyle(.secondary)
-            
-            Text("How would you like to add a receipt?")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                // Single Page Button
-                Button {
-                    captureMode = .single
-                } label: {
-                    HStack {
-                        Image(systemName: "doc")
-                            .font(.title2)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Single Page")
-                                .fontWeight(.semibold)
-                            Text("Capture and process immediately")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+            VStack(spacing: 0) {
+                Spacer()
                 
-                // Multi Page Button
-                Button {
-                    captureMode = .multi
-                } label: {
-                    HStack {
-                        Image(systemName: "doc.on.doc")
-                            .font(.title2)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Multi-Page Receipt")
-                                .fontWeight(.semibold)
-                            Text("Add all pages, then process")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .foregroundStyle(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+                // Elegant icon
+                Image(systemName: "doc.text")
+                    .font(.system(size: 56, weight: .ultraLight))
+                    .foregroundStyle(AppTheme.orange)
+                    .padding(.bottom, 24)
                 
-                // Folder selection
-                Button {
-                    showFolderPicker = true
-                } label: {
-                    HStack {
-                        if let folder = selectedFolder {
-                            Image(systemName: folder.iconName)
-                                .font(.title2)
-                                .foregroundStyle(folder.color)
-                        } else {
-                            Image(systemName: "folder")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
+                Text("ADD RECEIPT")
+                    .font(.system(.caption, design: .default, weight: .medium))
+                    .tracking(3)
+                    .foregroundStyle(AppTheme.gray)
+                    .padding(.bottom, 8)
+                
+                Text("Choose your capture method")
+                    .font(.system(.body, design: .serif))
+                    .foregroundStyle(AppTheme.black)
+                
+                Spacer()
+                
+                VStack(spacing: 16) {
+                    // Single Page
+                    Button {
+                        captureMode = .single
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("SINGLE PAGE")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(1.5)
+                                    .foregroundStyle(AppTheme.black)
+                                
+                                Text("Quick capture with instant processing")
+                                    .font(.system(.caption))
+                                    .foregroundStyle(AppTheme.gray)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .light))
+                                .foregroundStyle(AppTheme.gray)
                         }
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Save to Folder")
-                                .fontWeight(.medium)
-                            Text(selectedFolder?.name ?? "No folder selected")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.secondary)
+                        .padding(20)
+                        .background(AppTheme.white)
+                        .overlay(
+                            Rectangle()
+                                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+                        )
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .foregroundStyle(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    // Multi Page
+                    Button {
+                        captureMode = .multi
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("MULTI-PAGE")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(1.5)
+                                    .foregroundStyle(AppTheme.black)
+                                
+                                Text("Add all pages, then process together")
+                                    .font(.system(.caption))
+                                    .foregroundStyle(AppTheme.gray)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .light))
+                                .foregroundStyle(AppTheme.gray)
+                        }
+                        .padding(20)
+                        .background(AppTheme.white)
+                        .overlay(
+                            Rectangle()
+                                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+                        )
+                    }
+                    
+                    // Folder selection
+                    Button {
+                        showFolderPicker = true
+                    } label: {
+                        HStack {
+                            if let folder = selectedFolder {
+                                Circle()
+                                    .fill(folder.color)
+                                    .frame(width: 8, height: 8)
+                            }
+                            
+                            Text(selectedFolder?.name.uppercased() ?? "NO FOLDER")
+                                .font(.system(.caption2, design: .default, weight: .medium))
+                                .tracking(1)
+                                .foregroundStyle(selectedFolder != nil ? AppTheme.orange : AppTheme.gray)
+                            
+                            Spacer()
+                            
+                            Text("CHANGE")
+                                .font(.system(.caption2, design: .default, weight: .regular))
+                                .tracking(1)
+                                .foregroundStyle(AppTheme.orange)
+                        }
+                        .padding(16)
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
     }

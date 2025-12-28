@@ -23,28 +23,32 @@ struct ReceiptDetailView: View {
     @State private var showFullScreenImage = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Receipt Image
-                receiptImageSection
-                
-                // Parsed Information
-                parsedInfoSection
-                
-                // Line Items
-                if !receipt.items.isEmpty {
-                    lineItemsSection
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Receipt Image
+                    receiptImageSection
+                    
+                    // Parsed Information
+                    parsedInfoSection
+                    
+                    // Line Items
+                    if !receipt.items.isEmpty {
+                        lineItemsSection
+                    }
+                    
+                    // Raw OCR Text
+                    if let rawText = receipt.rawText, !rawText.isEmpty {
+                        rawTextSection(rawText)
+                    }
+                    
+                    // Notes
+                    notesSection
                 }
-                
-                // Raw OCR Text
-                if let rawText = receipt.rawText, !rawText.isEmpty {
-                    rawTextSection(rawText)
-                }
-                
-                // Notes
-                notesSection
+                .padding(20)
             }
-            .padding()
         }
         .navigationTitle(receipt.displayName)
         .navigationBarTitleDisplayMode(.inline)
@@ -63,7 +67,9 @@ struct ReceiptDetailView: View {
                         Label("Delete", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .light))
+                        .foregroundStyle(AppTheme.black)
                 }
             }
         }
@@ -83,6 +89,7 @@ struct ReceiptDetailView: View {
         .task {
             await loadAllImages()
         }
+        .tint(AppTheme.orange)
     }
     
     // MARK: - Sections
@@ -96,31 +103,51 @@ struct ReceiptDetailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxHeight: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
                         .onTapGesture {
                             showFullScreenImage = true
                         }
+                        .overlay(alignment: .bottomTrailing) {
+                            // Zoom hint
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                    .font(.caption2)
+                                Text("Tap to zoom")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(Color.black.opacity(0.5)))
+                            .padding(12)
+                        }
                 } else {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.gray.opacity(0.2))
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(.tertiarySystemFill))
                         .frame(height: 200)
                         .overlay {
-                            ProgressView()
+                            VStack(spacing: 8) {
+                                ProgressView()
+                                Text("Loading...")
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.textTertiary)
+                            }
                         }
                 }
                 
                 // Page navigation arrows
-                if receipt.isMultiPage {
+                if receipt.isMultiPage && !loadedImages.isEmpty {
                     HStack {
                         Button {
-                            withAnimation {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 currentPageIndex = max(0, currentPageIndex - 1)
                             }
                         } label: {
                             Image(systemName: "chevron.left.circle.fill")
                                 .font(.title)
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .shadow(color: .black.opacity(0.3), radius: 4)
                         }
                         .disabled(currentPageIndex == 0)
                         .opacity(currentPageIndex == 0 ? 0.3 : 1)
@@ -128,14 +155,14 @@ struct ReceiptDetailView: View {
                         Spacer()
                         
                         Button {
-                            withAnimation {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 currentPageIndex = min(receipt.pageCount - 1, currentPageIndex + 1)
                             }
                         } label: {
                             Image(systemName: "chevron.right.circle.fill")
                                 .font(.title)
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .shadow(color: .black.opacity(0.3), radius: 4)
                         }
                         .disabled(currentPageIndex == receipt.pageCount - 1)
                         .opacity(currentPageIndex == receipt.pageCount - 1 ? 0.3 : 1)
@@ -146,13 +173,13 @@ struct ReceiptDetailView: View {
             
             // Page indicator
             if receipt.isMultiPage {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     ForEach(0..<receipt.pageCount, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentPageIndex ? Color.accentColor : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
+                        Capsule()
+                            .fill(index == currentPageIndex ? AppTheme.accent : Color.gray.opacity(0.3))
+                            .frame(width: index == currentPageIndex ? 20 : 8, height: 8)
                             .onTapGesture {
-                                withAnimation {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     currentPageIndex = index
                                 }
                             }
@@ -160,85 +187,155 @@ struct ReceiptDetailView: View {
                 }
                 
                 Text("Page \(currentPageIndex + 1) of \(receipt.pageCount)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .rounded, weight: .medium))
+                    .foregroundStyle(AppTheme.textSecondary)
             }
         }
     }
     
     private var parsedInfoSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 1) {
             // Store Info
-            VStack(spacing: 12) {
-                InfoRow(label: "Store", value: receipt.displayName, icon: "storefront")
+            VStack(alignment: .leading, spacing: 16) {
+                Text("STORE")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
                 
-                if let address = receipt.storeAddress, !address.isEmpty {
-                    InfoRow(label: "Address", value: address, icon: "mappin.and.ellipse")
-                }
-                
-                if let phone = receipt.storePhone, !phone.isEmpty {
-                    InfoRow(label: "Phone", value: phone, icon: "phone")
+                VStack(spacing: 12) {
+                    HermesInfoRow(label: "Name", value: receipt.displayName)
+                    
+                    if let address = receipt.storeAddress, !address.isEmpty {
+                        HermesInfoRow(label: "Address", value: address)
+                    }
+                    
+                    if let phone = receipt.storePhone, !phone.isEmpty {
+                        HermesInfoRow(label: "Phone", value: phone)
+                    }
                 }
             }
-            
-            Divider()
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
             
             // Transaction Info
-            VStack(spacing: 12) {
-                InfoRow(label: "Date", value: receipt.formattedDate, icon: "calendar")
+            VStack(alignment: .leading, spacing: 16) {
+                Text("TRANSACTION")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
                 
-                if let txNumber = receipt.transactionNumber, !txNumber.isEmpty {
-                    InfoRow(label: "Receipt #", value: txNumber, icon: "number")
+                VStack(spacing: 12) {
+                    HermesInfoRow(label: "Date", value: receipt.formattedDate)
+                    
+                    if let txNumber = receipt.transactionNumber, !txNumber.isEmpty {
+                        HermesInfoRow(label: "Receipt #", value: txNumber)
+                    }
+                    
+                    HermesInfoRow(label: "Category", value: receipt.category.rawValue)
+                    
+                    if let folder = receipt.folder {
+                        HStack {
+                            Text("Folder")
+                                .font(.subheadline)
+                                .foregroundStyle(AppTheme.gray)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(folder.color)
+                                    .frame(width: 8, height: 8)
+                                Text(folder.name)
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppTheme.black)
+                            }
+                        }
+                    }
                 }
-                
-                InfoRow(label: "Category", value: receipt.category.rawValue, icon: receipt.category.icon)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
             
-            Divider()
-            
-            // Financial Breakdown
-            VStack(spacing: 12) {
-                if receipt.subtotal != nil {
-                    InfoRow(label: "Subtotal", value: receipt.formattedSubtotal, icon: "cart")
-                }
+            // Amount
+            VStack(alignment: .leading, spacing: 16) {
+                Text("AMOUNT")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
                 
-                if receipt.tax != nil {
-                    InfoRow(label: "Tax", value: receipt.formattedTax, icon: "percent")
+                VStack(spacing: 12) {
+                    if receipt.subtotal != nil {
+                        HermesInfoRow(label: "Subtotal", value: receipt.formattedSubtotal)
+                    }
+                    
+                    if receipt.tax != nil {
+                        HermesInfoRow(label: "Tax", value: receipt.formattedTax)
+                    }
+                    
+                    if receipt.tips != nil {
+                        HermesInfoRow(label: "Tips", value: receipt.formattedTips)
+                    }
+                    
+                    PremiumDivider()
+                        .padding(.vertical, 4)
+                    
+                    HStack {
+                        Text("Total")
+                            .font(.system(.subheadline, design: .serif, weight: .regular))
+                            .foregroundStyle(AppTheme.black)
+                        
+                        Spacer()
+                        
+                        Text(receipt.formattedTotal)
+                            .font(.system(.title2, design: .default, weight: .medium))
+                            .foregroundStyle(AppTheme.orange)
+                    }
                 }
-                
-                if receipt.tips != nil {
-                    InfoRow(label: "Tips", value: receipt.formattedTips, icon: "heart")
-                }
-                
-                InfoRow(label: "Total", value: receipt.formattedTotal, icon: "dollarsign.circle", valueColor: .green)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
             
-            Divider()
-            
-            // Payment Info
-            VStack(spacing: 12) {
-                InfoRow(label: "Payment", value: receipt.paymentDisplay, icon: receipt.paymentMethod.icon)
+            // Payment
+            VStack(alignment: .leading, spacing: 16) {
+                Text("PAYMENT")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
+                
+                HermesInfoRow(label: "Method", value: receipt.paymentDisplay)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     private var lineItemsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Items")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("ITEMS")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+                .padding(.bottom, 16)
             
             ForEach(receipt.items) { item in
                 HStack {
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(item.name)
                             .font(.subheadline)
+                            .foregroundStyle(AppTheme.black)
                         if !item.displayQuantity.isEmpty {
                             Text(item.displayQuantity)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.gray)
                         }
                     }
                     
@@ -246,64 +343,90 @@ struct ReceiptDetailView: View {
                     
                     Text(item.formattedPrice)
                         .font(.subheadline)
-                        .fontWeight(.medium)
+                        .foregroundStyle(AppTheme.orange)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 12)
                 
                 if item.id != receipt.items.last?.id {
-                    Divider()
+                    PremiumDivider()
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     private func rawTextSection(_ text: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Raw Text")
-                    .font(.headline)
+                Text("RAW TEXT")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
+                
                 Spacer()
+                
                 Button {
                     UIPasteboard.general.string = text
                 } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.caption)
+                    Text("COPY")
+                        .font(.system(.caption2, design: .default, weight: .regular))
+                        .tracking(1)
+                        .foregroundStyle(AppTheme.orange)
                 }
             }
+            .padding(.bottom, 16)
             
             Text(text)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(AppTheme.gray)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(AppTheme.offWhite)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Notes")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("NOTES")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+                .padding(.bottom, 16)
             
             if let notes = receipt.notes, !notes.isEmpty {
                 Text(notes)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                Text("No notes")
+                Text("Tap Edit to add notes")
                     .font(.subheadline)
-                    .foregroundStyle(.tertiary)
                     .italic()
+                    .foregroundStyle(AppTheme.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     // MARK: - Actions

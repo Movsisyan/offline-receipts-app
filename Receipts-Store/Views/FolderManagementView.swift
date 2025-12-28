@@ -20,30 +20,36 @@ struct FolderListView: View {
     @State private var folderToDelete: Folder?
     
     var body: some View {
-        List {
-            ForEach(folders) { folder in
-                FolderRow(folder: folder)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        folderToEdit = folder
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            folderToDelete = folder
-                            showDeleteConfirmation = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        
-                        Button {
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
+            
+            List {
+                ForEach(folders) { folder in
+                    FolderRow(folder: folder)
+                        .listRowBackground(AppTheme.white)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
                             folderToEdit = folder
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
                         }
-                        .tint(.orange)
-                    }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                folderToDelete = folder
+                                showDeleteConfirmation = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            
+                            Button {
+                                folderToEdit = folder
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(AppTheme.orange)
+                        }
+                }
+                .onMove(perform: moveFolder)
             }
-            .onMove(perform: moveFolder)
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle("Folders")
         .toolbar {
@@ -52,6 +58,8 @@ struct FolderListView: View {
                     showCreateFolder = true
                 } label: {
                     Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .light))
+                        .foregroundStyle(AppTheme.orange)
                 }
             }
             
@@ -82,17 +90,16 @@ struct FolderListView: View {
         }
         .overlay {
             if folders.isEmpty {
-                ContentUnavailableView {
-                    Label("No Folders", systemImage: "folder")
-                } description: {
-                    Text("Create folders to organize your receipts")
-                } actions: {
-                    Button("Create Folder") {
-                        showCreateFolder = true
-                    }
-                }
+                PremiumEmptyState(
+                    icon: "folder",
+                    title: "No Folders",
+                    message: "Create folders to organize your receipts.",
+                    action: { showCreateFolder = true },
+                    actionLabel: "Create Folder"
+                )
             }
         }
+        .tint(AppTheme.orange)
     }
     
     private func moveFolder(from source: IndexSet, to destination: Int) {
