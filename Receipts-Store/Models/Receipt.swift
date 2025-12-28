@@ -63,7 +63,10 @@ enum PaymentMethod: String, Codable, CaseIterable {
 @Model
 final class Receipt {
     var id: UUID
-    var imageFileName: String
+    
+    /// Comma-separated list of image filenames for multi-page receipts
+    var imageFileNamesString: String
+    
     var rawText: String?
     
     // Store information
@@ -94,6 +97,33 @@ final class Receipt {
     @Relationship(deleteRule: .cascade)
     var items: [ReceiptItem]
     
+    // MARK: - Multi-page Image Support
+    
+    /// Array of image filenames
+    var imageFileNames: [String] {
+        get {
+            imageFileNamesString.split(separator: ",").map { String($0) }
+        }
+        set {
+            imageFileNamesString = newValue.joined(separator: ",")
+        }
+    }
+    
+    /// First image filename (for backwards compatibility and thumbnails)
+    var primaryImageFileName: String {
+        imageFileNames.first ?? ""
+    }
+    
+    /// Number of pages in the receipt
+    var pageCount: Int {
+        imageFileNames.count
+    }
+    
+    /// Whether the receipt has multiple pages
+    var isMultiPage: Bool {
+        pageCount > 1
+    }
+    
     // MARK: - Computed Properties for Enums
     
     var paymentMethod: PaymentMethod {
@@ -109,6 +139,49 @@ final class Receipt {
     // MARK: - Initializer
     
     init(
+        id: UUID = UUID(),
+        imageFileNames: [String],
+        rawText: String? = nil,
+        storeName: String? = nil,
+        storeAddress: String? = nil,
+        storePhone: String? = nil,
+        transactionDate: Date? = nil,
+        transactionNumber: String? = nil,
+        subtotal: Decimal? = nil,
+        tax: Decimal? = nil,
+        tips: Decimal? = nil,
+        total: Decimal? = nil,
+        currency: String? = "USD",
+        paymentMethod: PaymentMethod = .unknown,
+        cardLastFourDigits: String? = nil,
+        category: ReceiptCategory = .uncategorized,
+        notes: String? = nil,
+        createdAt: Date = Date(),
+        items: [ReceiptItem] = []
+    ) {
+        self.id = id
+        self.imageFileNamesString = imageFileNames.joined(separator: ",")
+        self.rawText = rawText
+        self.storeName = storeName
+        self.storeAddress = storeAddress
+        self.storePhone = storePhone
+        self.transactionDate = transactionDate
+        self.transactionNumber = transactionNumber
+        self.subtotal = subtotal
+        self.tax = tax
+        self.tips = tips
+        self.total = total
+        self.currency = currency
+        self.paymentMethodRaw = paymentMethod.rawValue
+        self.cardLastFourDigits = cardLastFourDigits
+        self.categoryRaw = category.rawValue
+        self.notes = notes
+        self.createdAt = createdAt
+        self.items = items
+    }
+    
+    /// Convenience initializer for single image (backwards compatibility)
+    convenience init(
         id: UUID = UUID(),
         imageFileName: String,
         rawText: String? = nil,
@@ -129,25 +202,27 @@ final class Receipt {
         createdAt: Date = Date(),
         items: [ReceiptItem] = []
     ) {
-        self.id = id
-        self.imageFileName = imageFileName
-        self.rawText = rawText
-        self.storeName = storeName
-        self.storeAddress = storeAddress
-        self.storePhone = storePhone
-        self.transactionDate = transactionDate
-        self.transactionNumber = transactionNumber
-        self.subtotal = subtotal
-        self.tax = tax
-        self.tips = tips
-        self.total = total
-        self.currency = currency
-        self.paymentMethodRaw = paymentMethod.rawValue
-        self.cardLastFourDigits = cardLastFourDigits
-        self.categoryRaw = category.rawValue
-        self.notes = notes
-        self.createdAt = createdAt
-        self.items = items
+        self.init(
+            id: id,
+            imageFileNames: [imageFileName],
+            rawText: rawText,
+            storeName: storeName,
+            storeAddress: storeAddress,
+            storePhone: storePhone,
+            transactionDate: transactionDate,
+            transactionNumber: transactionNumber,
+            subtotal: subtotal,
+            tax: tax,
+            tips: tips,
+            total: total,
+            currency: currency,
+            paymentMethod: paymentMethod,
+            cardLastFourDigits: cardLastFourDigits,
+            category: category,
+            notes: notes,
+            createdAt: createdAt,
+            items: items
+        )
     }
     
     // MARK: - Formatted Properties
@@ -194,5 +269,20 @@ final class Receipt {
         formatter.numberStyle = .currency
         formatter.currencyCode = currency ?? "USD"
         return formatter.string(from: value as NSDecimalNumber) ?? "—"
+    }
+    
+    /// Add a new page to the receipt
+    func addPage(filename: String) {
+        var names = imageFileNames
+        names.append(filename)
+        imageFileNames = names
+    }
+    
+    /// Remove a page from the receipt
+    func removePage(at index: Int) {
+        var names = imageFileNames
+        guard index < names.count else { return }
+        names.remove(at: index)
+        imageFileNames = names
     }
 }

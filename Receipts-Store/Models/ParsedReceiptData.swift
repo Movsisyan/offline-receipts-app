@@ -161,10 +161,15 @@ extension ParsedReceiptData {
         }
     }
     
-    /// Creates a Receipt model from this parsed data
+    /// Creates a Receipt model from this parsed data (single image)
     func createReceipt(imageFileName: String, rawText: String?) -> Receipt {
+        createReceipt(imageFileNames: [imageFileName], rawText: rawText)
+    }
+    
+    /// Creates a Receipt model from this parsed data (multi-page support)
+    func createReceipt(imageFileNames: [String], rawText: String?) -> Receipt {
         Receipt(
-            imageFileName: imageFileName,
+            imageFileNames: imageFileNames,
             rawText: rawText,
             storeName: storeName,
             storeAddress: storeAddress,

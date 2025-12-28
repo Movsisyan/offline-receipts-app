@@ -95,8 +95,10 @@ struct ReceiptsListView: View {
     
     private func deleteReceipt(_ receipt: Receipt) {
         Task {
-            // Delete the image file
-            try? await ImageStorageService.shared.deleteImage(filename: receipt.imageFileName)
+            // Delete all image files for multi-page receipts
+            for filename in receipt.imageFileNames {
+                try? await ImageStorageService.shared.deleteImage(filename: filename)
+            }
         }
         modelContext.delete(receipt)
     }
@@ -111,8 +113,8 @@ struct ReceiptCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Thumbnail
-            ZStack {
+            // Thumbnail with page count badge
+            ZStack(alignment: .topTrailing) {
                 if let image = thumbnailImage {
                     Image(uiImage: image)
                         .resizable()
@@ -128,6 +130,19 @@ struct ReceiptCard: View {
                                 .font(.largeTitle)
                                 .foregroundStyle(.secondary)
                         }
+                }
+                
+                // Multi-page badge
+                if receipt.isMultiPage {
+                    Text("\(receipt.pageCount)")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor)
+                        .clipShape(Capsule())
+                        .padding(6)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -165,7 +180,7 @@ struct ReceiptCard: View {
     private func loadThumbnail() async {
         do {
             let image = try await ImageStorageService.shared.createThumbnail(
-                for: receipt.imageFileName,
+                for: receipt.primaryImageFileName,
                 size: CGSize(width: 200, height: 200)
             )
             await MainActor.run {

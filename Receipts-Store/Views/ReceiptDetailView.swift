@@ -14,7 +14,10 @@ struct ReceiptDetailView: View {
     
     @Bindable var receipt: Receipt
     
-    @State private var fullImage: UIImage?
+    // Multi-page support
+    @State private var loadedImages: [UIImage] = []
+    @State private var currentPageIndex = 0
+    
     @State private var isEditing = false
     @State private var showDeleteConfirmation = false
     @State private var showFullScreenImage = false
@@ -68,7 +71,7 @@ struct ReceiptDetailView: View {
             EditReceiptView(receipt: receipt)
         }
         .fullScreenCover(isPresented: $showFullScreenImage) {
-            FullScreenImageView(image: fullImage)
+            FullScreenImageView(images: loadedImages, initialIndex: currentPageIndex)
         }
         .confirmationDialog("Delete Receipt", isPresented: $showDeleteConfirmation) {
             Button("Delete", role: .destructive) {
@@ -78,30 +81,87 @@ struct ReceiptDetailView: View {
             Text("Are you sure you want to delete this receipt? This cannot be undone.")
         }
         .task {
-            await loadFullImage()
+            await loadAllImages()
         }
     }
     
     // MARK: - Sections
     
     private var receiptImageSection: some View {
-        ZStack {
-            if let image = fullImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 300)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .onTapGesture {
-                        showFullScreenImage = true
+        VStack(spacing: 12) {
+            // Image with page navigation
+            ZStack {
+                if !loadedImages.isEmpty && currentPageIndex < loadedImages.count {
+                    Image(uiImage: loadedImages[currentPageIndex])
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxHeight: 300)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .onTapGesture {
+                            showFullScreenImage = true
+                        }
+                } else {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 200)
+                        .overlay {
+                            ProgressView()
+                        }
+                }
+                
+                // Page navigation arrows
+                if receipt.isMultiPage {
+                    HStack {
+                        Button {
+                            withAnimation {
+                                currentPageIndex = max(0, currentPageIndex - 1)
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left.circle.fill")
+                                .font(.title)
+                                .foregroundStyle(.white)
+                                .shadow(radius: 2)
+                        }
+                        .disabled(currentPageIndex == 0)
+                        .opacity(currentPageIndex == 0 ? 0.3 : 1)
+                        
+                        Spacer()
+                        
+                        Button {
+                            withAnimation {
+                                currentPageIndex = min(receipt.pageCount - 1, currentPageIndex + 1)
+                            }
+                        } label: {
+                            Image(systemName: "chevron.right.circle.fill")
+                                .font(.title)
+                                .foregroundStyle(.white)
+                                .shadow(radius: 2)
+                        }
+                        .disabled(currentPageIndex == receipt.pageCount - 1)
+                        .opacity(currentPageIndex == receipt.pageCount - 1 ? 0.3 : 1)
                     }
-            } else {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 200)
-                    .overlay {
-                        ProgressView()
+                    .padding(.horizontal, 8)
+                }
+            }
+            
+            // Page indicator
+            if receipt.isMultiPage {
+                HStack(spacing: 8) {
+                    ForEach(0..<receipt.pageCount, id: \.self) { index in
+                        Circle()
+                            .fill(index == currentPageIndex ? Color.accentColor : Color.gray.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .onTapGesture {
+                                withAnimation {
+                                    currentPageIndex = index
+                                }
+                            }
                     }
+                }
+                
+                Text("Page \(currentPageIndex + 1) of \(receipt.pageCount)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -248,13 +308,24 @@ struct ReceiptDetailView: View {
     
     // MARK: - Actions
     
-    private func loadFullImage() async {
-        fullImage = await ImageStorageService.shared.loadImageAsync(filename: receipt.imageFileName)
+    private func loadAllImages() async {
+        var images: [UIImage] = []
+        for filename in receipt.imageFileNames {
+            if let image = await ImageStorageService.shared.loadImageAsync(filename: filename) {
+                images.append(image)
+            }
+        }
+        await MainActor.run {
+            loadedImages = images
+        }
     }
     
     private func deleteReceipt() {
         Task {
-            try? await ImageStorageService.shared.deleteImage(filename: receipt.imageFileName)
+            // Delete all image files
+            for filename in receipt.imageFileNames {
+                try? await ImageStorageService.shared.deleteImage(filename: filename)
+            }
         }
         modelContext.delete(receipt)
         dismiss()
@@ -291,39 +362,73 @@ struct InfoRow: View {
 
 struct FullScreenImageView: View {
     @Environment(\.dismiss) private var dismiss
-    let image: UIImage?
+    let images: [UIImage]
+    let initialIndex: Int
     
+    @State private var currentIndex: Int = 0
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
     
+    init(images: [UIImage], initialIndex: Int = 0) {
+        self.images = images
+        self.initialIndex = initialIndex
+        _currentIndex = State(initialValue: initialIndex)
+    }
+    
     var body: some View {
         NavigationStack {
-            GeometryReader { geometry in
-                if let image = image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .scaleEffect(scale)
-                        .gesture(
-                            MagnificationGesture()
-                                .onChanged { value in
-                                    scale = lastScale * value
-                                }
-                                .onEnded { _ in
-                                    lastScale = scale
-                                    if scale < 1.0 {
-                                        withAnimation {
-                                            scale = 1.0
-                                            lastScale = 1.0
-                                        }
-                                    }
-                                }
-                        )
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                if images.isEmpty {
+                    Text("No images")
+                        .foregroundStyle(.white)
+                } else {
+                    TabView(selection: $currentIndex) {
+                        ForEach(0..<images.count, id: \.self) { index in
+                            GeometryReader { geometry in
+                                Image(uiImage: images[index])
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .scaleEffect(scale)
+                                    .gesture(
+                                        MagnificationGesture()
+                                            .onChanged { value in
+                                                scale = lastScale * value
+                                            }
+                                            .onEnded { _ in
+                                                lastScale = scale
+                                                if scale < 1.0 {
+                                                    withAnimation {
+                                                        scale = 1.0
+                                                        lastScale = 1.0
+                                                    }
+                                                }
+                                            }
+                                    )
+                                    .frame(width: geometry.size.width, height: geometry.size.height)
+                            }
+                            .tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
+                    .indexViewStyle(.page(backgroundDisplayMode: .always))
+                }
+                
+                // Page indicator for multi-page
+                if images.count > 1 {
+                    VStack {
+                        Spacer()
+                        Text("Page \(currentIndex + 1) of \(images.count)")
+                            .font(.caption)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Capsule())
+                            .padding(.bottom, 60)
+                    }
                 }
             }
-            .background(Color.black)
-            .ignoresSafeArea()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -343,7 +448,7 @@ struct FullScreenImageView: View {
 #Preview {
     NavigationStack {
         ReceiptDetailView(receipt: Receipt(
-            imageFileName: "test.jpg",
+            imageFileNames: ["test.jpg"],
             rawText: "Sample receipt text",
             storeName: "Sample Store",
             transactionDate: Date(),
