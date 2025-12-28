@@ -36,6 +36,8 @@ struct EditReceiptView: View {
     // Organization
     @State private var category: ReceiptCategory
     @State private var notes: String
+    @State private var selectedFolder: Folder?
+    @State private var showFolderPicker = false
     
     init(receipt: Receipt) {
         self.receipt = receipt
@@ -63,6 +65,7 @@ struct EditReceiptView: View {
         // Organization
         _category = State(initialValue: receipt.category)
         _notes = State(initialValue: receipt.notes ?? "")
+        _selectedFolder = State(initialValue: receipt.folder)
     }
     
     var body: some View {
@@ -123,6 +126,31 @@ struct EditReceiptView: View {
                         .frame(minHeight: 80)
                 }
                 
+                // Folder
+                Section("Folder") {
+                    Button {
+                        showFolderPicker = true
+                    } label: {
+                        HStack {
+                            if let folder = selectedFolder {
+                                Image(systemName: folder.iconName)
+                                    .foregroundStyle(folder.color)
+                                Text(folder.name)
+                                    .foregroundStyle(.primary)
+                            } else {
+                                Image(systemName: "folder")
+                                    .foregroundStyle(.secondary)
+                                Text("No Folder")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+                
                 // Items (read-only display)
                 if !receipt.items.isEmpty {
                     Section("Items (\(receipt.items.count))") {
@@ -160,6 +188,9 @@ struct EditReceiptView: View {
                     .fontWeight(.semibold)
                 }
             }
+            .sheet(isPresented: $showFolderPicker) {
+                FolderPickerView(selectedFolder: $selectedFolder)
+            }
         }
     }
     
@@ -186,6 +217,7 @@ struct EditReceiptView: View {
         // Organization
         receipt.category = category
         receipt.notes = notes.isEmpty ? nil : notes
+        receipt.folder = selectedFolder
         
         dismiss()
     }

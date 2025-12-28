@@ -13,7 +13,8 @@ struct Receipts_StoreApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Receipt.self,
-            ReceiptItem.self
+            ReceiptItem.self,
+            Folder.self
         ])
         
         // First try with normal configuration

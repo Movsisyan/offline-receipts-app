@@ -17,12 +17,19 @@ struct AddReceiptView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
+    // Initial folder (when adding from a folder view)
+    var initialFolder: Folder?
+    
     // Mode selection
     @State private var captureMode: ReceiptCaptureMode?
     
     // Multi-page support
     @State private var capturedImages: [UIImage] = []
     @State private var currentPageIndex = 0
+    
+    // Folder selection
+    @State private var selectedFolder: Folder?
+    @State private var showFolderPicker = false
     
     @State private var showCamera = false
     @State private var showPhotoLibrary = false
@@ -33,6 +40,11 @@ struct AddReceiptView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var hasProcessed = false
+    
+    init(initialFolder: Folder? = nil) {
+        self.initialFolder = initialFolder
+        _selectedFolder = State(initialValue: initialFolder)
+    }
     
     var body: some View {
         NavigationStack {
@@ -76,6 +88,9 @@ struct AddReceiptView: View {
                 PhotoLibraryPicker { image in
                     handleCapturedImage(image)
                 }
+            }
+            .sheet(isPresented: $showFolderPicker) {
+                FolderPickerView(selectedFolder: $selectedFolder)
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK") {}
@@ -143,6 +158,39 @@ struct AddReceiptView: View {
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .foregroundStyle(.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                
+                // Folder selection
+                Button {
+                    showFolderPicker = true
+                } label: {
+                    HStack {
+                        if let folder = selectedFolder {
+                            Image(systemName: folder.iconName)
+                                .font(.title2)
+                                .foregroundStyle(folder.color)
+                        } else {
+                            Image(systemName: "folder")
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Save to Folder")
+                                .fontWeight(.medium)
+                            Text(selectedFolder?.name ?? "No folder selected")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -647,6 +695,9 @@ struct AddReceiptView: View {
                 } else {
                     receipt = Receipt(imageFileNames: filenames, rawText: rawText)
                 }
+                
+                // Assign folder if selected
+                receipt.folder = selectedFolder
                 
                 // Save to SwiftData
                 await MainActor.run {

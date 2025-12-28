@@ -94,6 +94,9 @@ final class Receipt {
     var notes: String?
     var createdAt: Date
     
+    // Folder organization
+    var folder: Folder?
+    
     @Relationship(deleteRule: .cascade)
     var items: [ReceiptItem]
     
