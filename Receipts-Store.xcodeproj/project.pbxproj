@@ -400,6 +400,8 @@
 				DEVELOPMENT_TEAM = L6D3YF6CQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to photograph receipts for storage and analysis.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app accesses your photo library to select existing receipt images.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -432,6 +434,8 @@
 				DEVELOPMENT_TEAM = L6D3YF6CQ9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to photograph receipts for storage and analysis.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app accesses your photo library to select existing receipt images.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
