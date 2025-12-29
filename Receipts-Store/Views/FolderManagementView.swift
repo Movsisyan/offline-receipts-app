@@ -274,68 +274,103 @@ struct FolderFormView: View {
     @Binding var selectedIcon: String
     
     var body: some View {
-        Form {
-            Section {
-                // Preview
-                HStack {
-                    Spacer()
-                    VStack(spacing: 8) {
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Preview
+                    VStack(spacing: 12) {
                         Image(systemName: selectedIcon)
-                            .font(.system(size: 48))
-                            .foregroundStyle(Color(hex: selectedColorHex) ?? Color.accentColor)
+                            .font(.system(size: 48, weight: .light))
+                            .foregroundStyle(Color(hex: selectedColorHex) ?? AppTheme.orange)
                         
                         Text(name.isEmpty ? "Folder Name" : name)
-                            .font(.headline)
-                            .foregroundStyle(name.isEmpty ? .secondary : .primary)
+                            .font(.system(.title3, design: .serif))
+                            .foregroundStyle(name.isEmpty ? AppTheme.gray : AppTheme.black)
                     }
-                    .padding()
-                    Spacer()
-                }
-            }
-            
-            Section("Name") {
-                TextField("Folder name", text: $name)
-            }
-            
-            Section("Color") {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
-                    ForEach(Folder.presetColors, id: \.hex) { preset in
-                        Circle()
-                            .fill(Color(hex: preset.hex) ?? .gray)
-                            .frame(width: 36, height: 36)
-                            .overlay {
-                                if selectedColorHex == preset.hex {
-                                    Image(systemName: "checkmark")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                            .onTapGesture {
-                                selectedColorHex = preset.hex
-                            }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 32)
+                    .background(AppTheme.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                    
+                    // Name
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("NAME")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
+                        
+                        TextField("Folder name", text: $name)
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.black)
+                            .padding(.vertical, 12)
                     }
-                }
-                .padding(.vertical, 8)
-            }
-            
-            Section("Icon") {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
-                    ForEach(Folder.presetIcons, id: \.self) { icon in
-                        Image(systemName: icon)
-                            .font(.title2)
-                            .frame(width: 36, height: 36)
-                            .foregroundStyle(selectedIcon == icon ? .white : .primary)
-                            .background {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedIcon == icon ? (Color(hex: selectedColorHex) ?? Color.accentColor) : Color.clear)
+                    .padding(20)
+                    .background(AppTheme.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                    
+                    // Color
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("COLOR")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
+                            ForEach(Folder.presetColors, id: \.hex) { preset in
+                                Circle()
+                                    .fill(Color(hex: preset.hex) ?? .gray)
+                                    .frame(width: 40, height: 40)
+                                    .overlay {
+                                        if selectedColorHex == preset.hex {
+                                            Circle()
+                                                .strokeBorder(AppTheme.white, lineWidth: 3)
+                                            Image(systemName: "checkmark")
+                                                .font(.caption)
+                                                .fontWeight(.bold)
+                                                .foregroundStyle(.white)
+                                        }
+                                    }
+                                    .shadow(color: selectedColorHex == preset.hex ? (Color(hex: preset.hex) ?? .gray).opacity(0.4) : .clear, radius: 4, y: 2)
+                                    .onTapGesture {
+                                        selectedColorHex = preset.hex
+                                    }
                             }
-                            .onTapGesture {
-                                selectedIcon = icon
-                            }
+                        }
                     }
+                    .padding(20)
+                    .background(AppTheme.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                    
+                    // Icon
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("ICON")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
+                            ForEach(Folder.presetIcons, id: \.self) { icon in
+                                Image(systemName: icon)
+                                    .font(.title2)
+                                    .frame(width: 40, height: 40)
+                                    .foregroundStyle(selectedIcon == icon ? .white : AppTheme.black)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 2)
+                                            .fill(selectedIcon == icon ? (Color(hex: selectedColorHex) ?? AppTheme.orange) : AppTheme.cream)
+                                    }
+                                    .onTapGesture {
+                                        selectedIcon = icon
+                                    }
+                            }
+                        }
+                    }
+                    .padding(20)
+                    .background(AppTheme.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
                 }
-                .padding(.vertical, 8)
+                .padding(20)
             }
         }
     }
@@ -351,53 +386,78 @@ struct FolderPickerView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                // No folder option
-                Button {
-                    selectedFolder = nil
-                    dismiss()
-                } label: {
-                    HStack {
-                        Image(systemName: "tray")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 32)
-                        
-                        Text("No Folder")
-                            .foregroundStyle(.primary)
-                        
-                        Spacer()
-                        
-                        if selectedFolder == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(Color.accentColor)
-                        }
-                    }
-                }
+            ZStack {
+                AppTheme.cream.ignoresSafeArea()
                 
-                // Folders
-                ForEach(folders) { folder in
-                    Button {
-                        selectedFolder = folder
-                        dismiss()
-                    } label: {
-                        HStack {
-                            Image(systemName: folder.iconName)
-                                .font(.title2)
-                                .foregroundStyle(folder.color)
-                                .frame(width: 32)
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // No folder option
+                        Button {
+                            selectedFolder = nil
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "tray")
+                                    .font(.system(size: 20, weight: .light))
+                                    .foregroundStyle(AppTheme.gray)
+                                    .frame(width: 32)
+                                
+                                Text("No Folder")
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppTheme.black)
+                                
+                                Spacer()
+                                
+                                if selectedFolder == nil {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(AppTheme.orange)
+                                }
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        PremiumDivider()
+                            .padding(.leading, 64)
+                        
+                        // Folders
+                        ForEach(folders) { folder in
+                            Button {
+                                selectedFolder = folder
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: folder.iconName)
+                                        .font(.system(size: 20, weight: .light))
+                                        .foregroundStyle(folder.color)
+                                        .frame(width: 32)
+                                    
+                                    Text(folder.name)
+                                        .font(.subheadline)
+                                        .foregroundStyle(AppTheme.black)
+                                    
+                                    Spacer()
+                                    
+                                    if selectedFolder?.id == folder.id {
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(AppTheme.orange)
+                                    }
+                                }
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 20)
+                            }
                             
-                            Text(folder.name)
-                                .foregroundStyle(.primary)
-                            
-                            Spacer()
-                            
-                            if selectedFolder?.id == folder.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.accentColor)
+                            if folder.id != folders.last?.id {
+                                PremiumDivider()
+                                    .padding(.leading, 64)
                             }
                         }
                     }
+                    .background(AppTheme.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                    .padding(20)
                 }
             }
             .navigationTitle("Select Folder")
@@ -407,9 +467,11 @@ struct FolderPickerView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundStyle(AppTheme.gray)
                 }
             }
         }
+        .tint(AppTheme.orange)
     }
 }
 

@@ -242,59 +242,84 @@ struct AddReceiptView: View {
     // MARK: - Capture Options
     
     private var captureOptionsView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
             
-            Image(systemName: captureMode == .single ? "doc" : "doc.on.doc")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-            
-            VStack(spacing: 8) {
-                Text(captureMode == .single ? "Single Page Receipt" : "Multi-Page Receipt")
-                    .font(.title3)
-                    .fontWeight(.medium)
+            VStack(spacing: 0) {
+                Spacer()
                 
-                Text(captureMode == .single ? "Take a photo to scan immediately" : "Add all pages, then process together")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                if CameraCaptureView.isCameraAvailable {
-                    Button {
-                        showCamera = true
-                    } label: {
-                        Label("Take Photo", systemImage: "camera.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.accentColor)
+                // Elegant icon
+                Image(systemName: captureMode == .single ? "doc" : "doc.on.doc")
+                    .font(.system(size: 56, weight: .ultraLight))
+                    .foregroundStyle(AppTheme.orange)
+                    .padding(.bottom, 24)
+                
+                Text(captureMode == .single ? "SINGLE PAGE" : "MULTI-PAGE")
+                    .font(.system(.caption, design: .default, weight: .medium))
+                    .tracking(3)
+                    .foregroundStyle(AppTheme.gray)
+                    .padding(.bottom, 8)
+                
+                Text(captureMode == .single ? "Quick capture with instant processing" : "Add all pages, then process together")
+                    .font(.system(.body, design: .serif))
+                    .foregroundStyle(AppTheme.black)
+                    .multilineTextAlignment(.center)
+                
+                Spacer()
+                
+                VStack(spacing: 16) {
+                    if CameraCaptureView.isCameraAvailable {
+                        Button {
+                            showCamera = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "camera")
+                                    .font(.system(size: 14, weight: .light))
+                                Text("TAKE PHOTO")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(1.5)
+                            }
                             .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(AppTheme.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: 2))
+                        }
                     }
-                }
-                
-                Button {
-                    showPhotoLibrary = true
-                } label: {
-                    Label("Choose from Library", systemImage: "photo.on.rectangle")
+                    
+                    Button {
+                        showPhotoLibrary = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "photo")
+                                .font(.system(size: 14, weight: .light))
+                            Text("CHOOSE FROM LIBRARY")
+                                .font(.system(.caption2, design: .default, weight: .medium))
+                                .tracking(1.5)
+                        }
+                        .foregroundStyle(AppTheme.black)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.secondarySystemBackground))
-                        .foregroundStyle(.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.vertical, 16)
+                        .background(AppTheme.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 2)
+                                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+                        )
+                    }
+                    
+                    // Back to mode selection
+                    Button {
+                        captureMode = nil
+                    } label: {
+                        Text("Change Mode")
+                            .font(.system(.caption))
+                            .foregroundStyle(AppTheme.gray)
+                            .underline()
+                    }
+                    .padding(.top, 8)
                 }
-                
-                // Back to mode selection
-                Button {
-                    captureMode = nil
-                } label: {
-                    Text("Change Mode")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 8)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
     }
@@ -306,10 +331,12 @@ struct AddReceiptView: View {
             // Mode indicator
             HStack {
                 Image(systemName: captureMode == .single ? "doc" : "doc.on.doc")
-                    .foregroundStyle(.secondary)
-                Text(captureMode == .single ? "Single Page" : "Multi-Page")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(AppTheme.gray)
+                Text(captureMode == .single ? "SINGLE PAGE" : "MULTI-PAGE")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(1)
+                    .foregroundStyle(AppTheme.gray)
                 Spacer()
             }
             
@@ -321,39 +348,44 @@ struct AddReceiptView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxHeight: hasProcessed ? 150 : 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                        .shadow(color: AppTheme.cardShadowColor, radius: AppTheme.cardShadowRadius, y: AppTheme.cardShadowY)
                 }
                 
                 // Page navigation (multi-page only)
                 if capturedImages.count > 1 {
                     HStack {
                         Button {
-                            withAnimation {
+                            withAnimation(.easeInOut(duration: 0.2)) {
                                 currentPageIndex = max(0, currentPageIndex - 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.left.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .padding(10)
+                                .background(AppTheme.black.opacity(0.5))
+                                .clipShape(Circle())
                         }
                         .disabled(currentPageIndex == 0)
-                        .opacity(currentPageIndex == 0 ? 0.3 : 1)
+                        .opacity(currentPageIndex == 0 ? 0 : 1)
                         
                         Spacer()
                         
                         Button {
-                            withAnimation {
+                            withAnimation(.easeInOut(duration: 0.2)) {
                                 currentPageIndex = min(capturedImages.count - 1, currentPageIndex + 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.right.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .padding(10)
+                                .background(AppTheme.black.opacity(0.5))
+                                .clipShape(Circle())
                         }
                         .disabled(currentPageIndex == capturedImages.count - 1)
-                        .opacity(currentPageIndex == capturedImages.count - 1 ? 0.3 : 1)
+                        .opacity(currentPageIndex == capturedImages.count - 1 ? 0 : 1)
                     }
                     .padding(.horizontal, 8)
                 }
@@ -361,13 +393,13 @@ struct AddReceiptView: View {
             
             // Page indicator dots (multi-page only)
             if capturedImages.count > 1 {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     ForEach(0..<capturedImages.count, id: \.self) { index in
                         Circle()
-                            .fill(index == currentPageIndex ? Color.accentColor : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
+                            .fill(index == currentPageIndex ? AppTheme.orange : AppTheme.gray.opacity(0.3))
+                            .frame(width: 6, height: 6)
                             .onTapGesture {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.2)) {
                                     currentPageIndex = index
                                 }
                             }
@@ -379,8 +411,8 @@ struct AddReceiptView: View {
             if captureMode == .multi {
                 HStack {
                     Text("\(capturedImages.count) page\(capturedImages.count == 1 ? "" : "s") added")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.system(.caption))
+                        .foregroundStyle(AppTheme.gray)
                     
                     Spacer()
                     
@@ -400,8 +432,14 @@ struct AddReceiptView: View {
                                 Label("Choose from Library", systemImage: "photo")
                             }
                         } label: {
-                            Label("Add Page", systemImage: "plus.circle")
-                                .font(.subheadline)
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("ADD PAGE")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(1)
+                            }
+                            .foregroundStyle(AppTheme.orange)
                         }
                     }
                 }
@@ -419,12 +457,18 @@ struct AddReceiptView: View {
                         await processAllImages()
                     }
                 } label: {
-                    Label("Process Receipt", systemImage: "doc.text.magnifyingglass")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.accentColor)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    HStack {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 14, weight: .light))
+                        Text("PROCESS RECEIPT")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(1.5)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppTheme.orange)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
                 }
                 .padding(.top, 8)
             }
@@ -445,12 +489,21 @@ struct AddReceiptView: View {
                 Button {
                     removeCurrentPage()
                 } label: {
-                    Label("Remove", systemImage: "trash")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .foregroundStyle(.red)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .light))
+                        Text("REMOVE")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(1)
+                    }
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.red.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2)
+                            .strokeBorder(Color.red.opacity(0.2), lineWidth: 1)
+                    )
                 }
             }
             
@@ -470,14 +523,21 @@ struct AddReceiptView: View {
                     hasProcessed = false
                 }
             } label: {
-                Label(
-                    hasProcessed ? "Edit Pages" : (captureMode == .single ? "Retake" : "Start Over"),
-                    systemImage: hasProcessed ? "pencil" : "arrow.counterclockwise"
+                HStack(spacing: 6) {
+                    Image(systemName: hasProcessed ? "pencil" : "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .light))
+                    Text((hasProcessed ? "Edit Pages" : (captureMode == .single ? "Retake" : "Start Over")).uppercased())
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(1)
+                }
+                .foregroundStyle(AppTheme.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(AppTheme.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 2)
+                        .strokeBorder(AppTheme.lightGray, lineWidth: 1)
                 )
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -493,14 +553,18 @@ struct AddReceiptView: View {
     private var processingView: some View {
         VStack(spacing: 16) {
             ProgressView()
-                .scaleEffect(1.5)
+                .scaleEffect(1.2)
+                .tint(AppTheme.orange)
             
-            Text(processingStatus)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Text(processingStatus.uppercased())
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(1)
+                .foregroundStyle(AppTheme.gray)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
     }
     
     // MARK: - Parsed Result View

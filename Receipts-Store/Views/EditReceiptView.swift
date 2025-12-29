@@ -70,106 +70,36 @@ struct EditReceiptView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                // Store Information
-                Section("Store Information") {
-                    TextField("Store Name", text: $storeName)
-                    TextField("Address", text: $storeAddress)
-                    TextField("Phone", text: $storePhone)
-                        .keyboardType(.phonePad)
-                }
+            ZStack {
+                AppTheme.cream.ignoresSafeArea()
                 
-                // Transaction Details
-                Section("Transaction Details") {
-                    Toggle("Has Date", isOn: $hasDate)
-                    
-                    if hasDate {
-                        DatePicker("Date", selection: $transactionDate, displayedComponents: .date)
-                    }
-                    
-                    TextField("Receipt/Transaction #", text: $transactionNumber)
-                    
-                    Picker("Category", selection: $category) {
-                        ForEach(ReceiptCategory.allCases, id: \.self) { cat in
-                            Label(cat.rawValue, systemImage: cat.icon)
-                                .tag(cat)
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Store Information
+                        storeSection
+                        
+                        // Transaction Details
+                        transactionSection
+                        
+                        // Financial Details
+                        financialSection
+                        
+                        // Payment
+                        paymentSection
+                        
+                        // Organization
+                        organizationSection
+                        
+                        // Notes
+                        notesSection
+                        
+                        // Items (read-only)
+                        if !receipt.items.isEmpty {
+                            itemsSection
                         }
                     }
-                }
-                
-                // Financial Breakdown
-                Section("Financial Details") {
-                    CurrencyField(label: "Subtotal", value: $subtotalString)
-                    CurrencyField(label: "Tax", value: $taxString)
-                    CurrencyField(label: "Tips", value: $tipsString)
-                    CurrencyField(label: "Total", value: $totalString)
-                }
-                
-                // Payment Information
-                Section("Payment") {
-                    Picker("Method", selection: $paymentMethod) {
-                        ForEach(PaymentMethod.allCases, id: \.self) { method in
-                            Label(method.rawValue, systemImage: method.icon)
-                                .tag(method)
-                        }
-                    }
-                    
-                    if paymentMethod == .creditCard || paymentMethod == .debitCard {
-                        TextField("Last 4 Digits", text: $cardLastFour)
-                            .keyboardType(.numberPad)
-                    }
-                }
-                
-                // Notes
-                Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 80)
-                }
-                
-                // Folder
-                Section("Folder") {
-                    Button {
-                        showFolderPicker = true
-                    } label: {
-                        HStack {
-                            if let folder = selectedFolder {
-                                Image(systemName: folder.iconName)
-                                    .foregroundStyle(folder.color)
-                                Text(folder.name)
-                                    .foregroundStyle(.primary)
-                            } else {
-                                Image(systemName: "folder")
-                                    .foregroundStyle(.secondary)
-                                Text("No Folder")
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                }
-                
-                // Items (read-only display)
-                if !receipt.items.isEmpty {
-                    Section("Items (\(receipt.items.count))") {
-                        ForEach(receipt.items) { item in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(item.name)
-                                    if let qty = item.quantity, qty > 1 {
-                                        Text("Qty: \(qty)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                Spacer()
-                                Text(item.formattedPrice)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
+                    .padding(20)
+                    .padding(.bottom, 40)
                 }
             }
             .navigationTitle("Edit Receipt")
@@ -179,6 +109,7 @@ struct EditReceiptView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .foregroundStyle(AppTheme.gray)
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -186,13 +117,290 @@ struct EditReceiptView: View {
                         saveChanges()
                     }
                     .fontWeight(.semibold)
+                    .foregroundStyle(AppTheme.orange)
                 }
             }
             .sheet(isPresented: $showFolderPicker) {
                 FolderPickerView(selectedFolder: $selectedFolder)
             }
         }
+        .tint(AppTheme.orange)
     }
+    
+    // MARK: - Store Section
+    
+    private var storeSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("STORE")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            VStack(spacing: 0) {
+                HermesTextField(label: "Name", text: $storeName)
+                PremiumDivider()
+                HermesTextField(label: "Address", text: $storeAddress)
+                PremiumDivider()
+                HermesTextField(label: "Phone", text: $storePhone, keyboardType: .phonePad)
+            }
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Transaction Section
+    
+    private var transactionSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("TRANSACTION")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            VStack(spacing: 0) {
+                // Has Date Toggle
+                HStack {
+                    Text("Has Date")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.gray)
+                    Spacer()
+                    Toggle("", isOn: $hasDate)
+                        .labelsHidden()
+                        .tint(AppTheme.orange)
+                }
+                .padding(.vertical, 12)
+                
+                if hasDate {
+                    PremiumDivider()
+                    HStack {
+                        Text("Date")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.gray)
+                        Spacer()
+                        DatePicker("", selection: $transactionDate, displayedComponents: .date)
+                            .labelsHidden()
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                PremiumDivider()
+                HermesTextField(label: "Receipt #", text: $transactionNumber)
+                
+                PremiumDivider()
+                
+                // Category Picker
+                HStack {
+                    Text("Category")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.gray)
+                    Spacer()
+                    Picker("", selection: $category) {
+                        ForEach(ReceiptCategory.allCases, id: \.self) { cat in
+                            Label(cat.rawValue, systemImage: cat.icon)
+                                .tag(cat)
+                        }
+                    }
+                    .labelsHidden()
+                    .tint(AppTheme.black)
+                }
+                .padding(.vertical, 8)
+            }
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Financial Section
+    
+    private var financialSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("AMOUNT")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            VStack(spacing: 0) {
+                HermesCurrencyField(label: "Subtotal", value: $subtotalString)
+                PremiumDivider()
+                HermesCurrencyField(label: "Tax", value: $taxString)
+                PremiumDivider()
+                HermesCurrencyField(label: "Tips", value: $tipsString)
+                PremiumDivider()
+                
+                // Total with emphasis
+                HStack {
+                    Text("Total")
+                        .font(.system(.subheadline, design: .serif, weight: .regular))
+                        .foregroundStyle(AppTheme.black)
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("$")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.orange)
+                        TextField("0.00", text: $totalString)
+                            .font(.system(.title3, design: .default, weight: .medium))
+                            .foregroundStyle(AppTheme.orange)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 100)
+                    }
+                }
+                .padding(.vertical, 12)
+            }
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Payment Section
+    
+    private var paymentSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("PAYMENT")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            VStack(spacing: 0) {
+                // Payment Method
+                HStack {
+                    Text("Method")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.gray)
+                    Spacer()
+                    Picker("", selection: $paymentMethod) {
+                        ForEach(PaymentMethod.allCases, id: \.self) { method in
+                            Label(method.rawValue, systemImage: method.icon)
+                                .tag(method)
+                        }
+                    }
+                    .labelsHidden()
+                    .tint(AppTheme.black)
+                }
+                .padding(.vertical, 8)
+                
+                if paymentMethod == .creditCard || paymentMethod == .debitCard {
+                    PremiumDivider()
+                    HermesTextField(label: "Last 4 Digits", text: $cardLastFour, keyboardType: .numberPad)
+                }
+            }
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Organization Section
+    
+    private var organizationSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("ORGANIZATION")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            Button {
+                showFolderPicker = true
+            } label: {
+                HStack {
+                    Text("Folder")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.gray)
+                    
+                    Spacer()
+                    
+                    if let folder = selectedFolder {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(folder.color)
+                                .frame(width: 8, height: 8)
+                            Text(folder.name)
+                                .font(.subheadline)
+                                .foregroundStyle(AppTheme.black)
+                        }
+                    } else {
+                        Text("None")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.gray)
+                    }
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.gray)
+                }
+            }
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Notes Section
+    
+    private var notesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("NOTES")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            TextEditor(text: $notes)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.black)
+                .frame(minHeight: 80)
+                .padding(12)
+                .background(AppTheme.cream)
+                .clipShape(RoundedRectangle(cornerRadius: 2))
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Items Section
+    
+    private var itemsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("ITEMS (\(receipt.items.count))")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+            
+            VStack(spacing: 0) {
+                ForEach(receipt.items) { item in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name)
+                                .font(.subheadline)
+                                .foregroundStyle(AppTheme.black)
+                            if let qty = item.quantity, qty > 1 {
+                                Text("Qty: \(qty)")
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.gray)
+                            }
+                        }
+                        Spacer()
+                        Text(item.formattedPrice)
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.gray)
+                    }
+                    .padding(.vertical, 8)
+                    
+                    if item.id != receipt.items.last?.id {
+                        PremiumDivider()
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+    }
+    
+    // MARK: - Save
     
     private func saveChanges() {
         // Store Info
@@ -223,25 +431,54 @@ struct EditReceiptView: View {
     }
 }
 
-// MARK: - Currency Field Helper
+// MARK: - Hermès Text Field
 
-struct CurrencyField: View {
+struct HermesTextField: View {
+    let label: String
+    @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.gray)
+            Spacer()
+            TextField("", text: $text)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.black)
+                .multilineTextAlignment(.trailing)
+                .keyboardType(keyboardType)
+        }
+        .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Hermès Currency Field
+
+struct HermesCurrencyField: View {
     let label: String
     @Binding var value: String
     
     var body: some View {
         HStack {
             Text(label)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.gray)
             Spacer()
-            HStack {
+            HStack(spacing: 4) {
                 Text("$")
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.gray)
                 TextField("0.00", text: $value)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.black)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 100)
+                    .frame(width: 80)
             }
         }
+        .padding(.vertical, 12)
     }
 }
 
