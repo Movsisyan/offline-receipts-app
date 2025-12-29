@@ -141,16 +141,10 @@ struct FolderRow: View {
     
     var body: some View {
         HStack(spacing: 14) {
-            // Icon with colored background
-            ZStack {
-                Circle()
-                    .fill(folder.color.opacity(0.12))
-                    .frame(width: 44, height: 44)
-                
-                Image(systemName: folder.iconName)
-                    .font(.system(size: 18, weight: .light))
-                    .foregroundStyle(folder.color)
-            }
+            // Simple colored circle
+            Circle()
+                .fill(folder.color)
+                .frame(width: 12, height: 12)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(folder.name)
@@ -191,14 +185,12 @@ struct CreateFolderView: View {
     
     @State private var name = ""
     @State private var selectedColorHex = Folder.presetColors[0].hex
-    @State private var selectedIcon = Folder.presetIcons[0]
     
     var body: some View {
         NavigationStack {
             FolderFormView(
                 name: $name,
-                selectedColorHex: $selectedColorHex,
-                selectedIcon: $selectedIcon
+                selectedColorHex: $selectedColorHex
             )
             .navigationTitle("New Folder")
             .navigationBarTitleDisplayMode(.inline)
@@ -223,8 +215,7 @@ struct CreateFolderView: View {
     private func createFolder() {
         let folder = Folder(
             name: name.trimmingCharacters(in: .whitespaces),
-            colorHex: selectedColorHex,
-            iconName: selectedIcon
+            colorHex: selectedColorHex
         )
         modelContext.insert(folder)
         dismiss()
@@ -240,21 +231,18 @@ struct EditFolderView: View {
     
     @State private var name: String
     @State private var selectedColorHex: String
-    @State private var selectedIcon: String
     
     init(folder: Folder) {
         self.folder = folder
         _name = State(initialValue: folder.name)
         _selectedColorHex = State(initialValue: folder.colorHex)
-        _selectedIcon = State(initialValue: folder.iconName)
     }
     
     var body: some View {
         NavigationStack {
             FolderFormView(
                 name: $name,
-                selectedColorHex: $selectedColorHex,
-                selectedIcon: $selectedIcon
+                selectedColorHex: $selectedColorHex
             )
             .navigationTitle("Edit Folder")
             .navigationBarTitleDisplayMode(.inline)
@@ -279,7 +267,6 @@ struct EditFolderView: View {
     private func saveChanges() {
         folder.name = name.trimmingCharacters(in: .whitespaces)
         folder.colorHex = selectedColorHex
-        folder.iconName = selectedIcon
         dismiss()
     }
 }
@@ -289,7 +276,6 @@ struct EditFolderView: View {
 struct FolderFormView: View {
     @Binding var name: String
     @Binding var selectedColorHex: String
-    @Binding var selectedIcon: String
     
     var body: some View {
         ZStack {
@@ -297,11 +283,11 @@ struct FolderFormView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // Preview
-                    VStack(spacing: 12) {
-                        Image(systemName: selectedIcon)
-                            .font(.system(size: 48, weight: .light))
-                            .foregroundStyle(Color(hex: selectedColorHex) ?? AppTheme.orange)
+                    // Preview - simple colored circle with name
+                    VStack(spacing: 16) {
+                        Circle()
+                            .fill(Color(hex: selectedColorHex) ?? AppTheme.orange)
+                            .frame(width: 48, height: 48)
                         
                         Text(name.isEmpty ? "Folder Name" : name)
                             .font(.system(.title3, design: .serif))
@@ -360,33 +346,6 @@ struct FolderFormView: View {
                     .padding(20)
                     .background(AppTheme.white)
                     .clipShape(RoundedRectangle(cornerRadius: 2))
-                    
-                    // Icon
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("ICON")
-                            .font(.system(.caption2, design: .default, weight: .medium))
-                            .tracking(2)
-                            .foregroundStyle(AppTheme.gray)
-                        
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
-                            ForEach(Folder.presetIcons, id: \.self) { icon in
-                                Image(systemName: icon)
-                                    .font(.title2)
-                                    .frame(width: 40, height: 40)
-                                    .foregroundStyle(selectedIcon == icon ? .white : AppTheme.black)
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 2)
-                                            .fill(selectedIcon == icon ? (Color(hex: selectedColorHex) ?? AppTheme.orange) : AppTheme.cream)
-                                    }
-                                    .onTapGesture {
-                                        selectedIcon = icon
-                                    }
-                            }
-                        }
-                    }
-                    .padding(20)
-                    .background(AppTheme.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 2))
                 }
                 .padding(20)
             }
@@ -414,11 +373,10 @@ struct FolderPickerView: View {
                             selectedFolder = nil
                             dismiss()
                         } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "tray")
-                                    .font(.system(size: 20, weight: .light))
-                                    .foregroundStyle(AppTheme.gray)
-                                    .frame(width: 32)
+                            HStack(spacing: 14) {
+                                Circle()
+                                    .fill(AppTheme.gray.opacity(0.3))
+                                    .frame(width: 12, height: 12)
                                 
                                 Text("No Folder")
                                     .font(.subheadline)
@@ -437,7 +395,7 @@ struct FolderPickerView: View {
                         }
                         
                         PremiumDivider()
-                            .padding(.leading, 64)
+                            .padding(.leading, 46)
                         
                         // Folders
                         ForEach(folders) { folder in
@@ -445,11 +403,10 @@ struct FolderPickerView: View {
                                 selectedFolder = folder
                                 dismiss()
                             } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: folder.iconName)
-                                        .font(.system(size: 20, weight: .light))
-                                        .foregroundStyle(folder.color)
-                                        .frame(width: 32)
+                                HStack(spacing: 14) {
+                                    Circle()
+                                        .fill(folder.color)
+                                        .frame(width: 12, height: 12)
                                     
                                     Text(folder.name)
                                         .font(.subheadline)
