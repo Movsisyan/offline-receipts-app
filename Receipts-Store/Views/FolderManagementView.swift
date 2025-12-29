@@ -142,26 +142,27 @@ struct FolderRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: folder.iconName)
-                .font(.title2)
+                .font(.system(size: 22, weight: .light))
                 .foregroundStyle(folder.color)
                 .frame(width: 32)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(folder.name)
-                    .font(.body)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.black)
                 
                 Text("\(folder.receiptCount) receipt\(folder.receiptCount == 1 ? "" : "s")")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.gray)
             }
             
             Spacer()
             
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 12, weight: .light))
+                .foregroundStyle(AppTheme.gray)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 }
 

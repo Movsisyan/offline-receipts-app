@@ -454,33 +454,6 @@ struct ReceiptDetailView: View {
         dismiss()
     }
 }
-
-// MARK: - Info Row
-
-struct InfoRow: View {
-    let label: String
-    let value: String
-    let icon: String
-    var valueColor: Color = .primary
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            
-            Text(label)
-                .foregroundStyle(.secondary)
-            
-            Spacer()
-            
-            Text(value)
-                .fontWeight(.medium)
-                .foregroundStyle(valueColor)
-        }
-    }
-}
-
 // MARK: - Full Screen Image View
 
 struct FullScreenImageView: View {
@@ -499,71 +472,87 @@ struct FullScreenImageView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                if images.isEmpty {
-                    Text("No images")
-                        .foregroundStyle(.white)
-                } else {
-                    TabView(selection: $currentIndex) {
-                        ForEach(0..<images.count, id: \.self) { index in
-                            GeometryReader { geometry in
-                                Image(uiImage: images[index])
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .scaleEffect(scale)
-                                    .gesture(
-                                        MagnificationGesture()
-                                            .onChanged { value in
-                                                scale = lastScale * value
-                                            }
-                                            .onEnded { _ in
-                                                lastScale = scale
-                                                if scale < 1.0 {
-                                                    withAnimation {
-                                                        scale = 1.0
-                                                        lastScale = 1.0
-                                                    }
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            if images.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("No Images")
+                        .font(.system(.caption, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            } else {
+                TabView(selection: $currentIndex) {
+                    ForEach(0..<images.count, id: \.self) { index in
+                        GeometryReader { geometry in
+                            Image(uiImage: images[index])
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .scaleEffect(scale)
+                                .gesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in
+                                            scale = lastScale * value
+                                        }
+                                        .onEnded { _ in
+                                            lastScale = scale
+                                            if scale < 1.0 {
+                                                withAnimation(.easeOut(duration: 0.2)) {
+                                                    scale = 1.0
+                                                    lastScale = 1.0
                                                 }
                                             }
-                                    )
-                                    .frame(width: geometry.size.width, height: geometry.size.height)
-                            }
-                            .tag(index)
+                                        }
+                                )
+                                .frame(width: geometry.size.width, height: geometry.size.height)
                         }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
-                    .indexViewStyle(.page(backgroundDisplayMode: .always))
-                }
-                
-                // Page indicator for multi-page
-                if images.count > 1 {
-                    VStack {
-                        Spacer()
-                        Text("Page \(currentIndex + 1) of \(images.count)")
-                            .font(.caption)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                            .padding(.bottom, 60)
+                        .tag(index)
                     }
                 }
+                .tabViewStyle(.page(indexDisplayMode: .never))
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+            
+            // Custom page indicator and close button
+            VStack {
+                // Close button
+                HStack {
+                    Spacer()
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
+                            .padding(12)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Circle())
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                
+                Spacer()
+                
+                // Page indicator
+                if images.count > 1 {
+                    HStack(spacing: 6) {
+                        ForEach(0..<images.count, id: \.self) { index in
+                            Circle()
+                                .fill(index == currentIndex ? AppTheme.orange : Color.white.opacity(0.3))
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.3))
+                    .clipShape(Capsule())
+                    .padding(.bottom, 40)
+                }
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 }

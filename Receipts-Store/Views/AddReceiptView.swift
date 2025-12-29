@@ -571,128 +571,183 @@ struct AddReceiptView: View {
     
     private func parsedResultView(_ data: ParsedReceiptData) -> some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 1) {
+                // Header
                 HStack {
-                    Text("Parsed Receipt")
-                        .font(.headline)
+                    Text("PARSED RECEIPT")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
+                    
                     Spacer()
+                    
                     if captureMode == .multi {
                         Button {
                             hasProcessed = false
                             parsedData = nil
                             rawText = nil
                         } label: {
-                            Label("Re-scan", systemImage: "arrow.clockwise")
-                                .font(.caption)
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 10, weight: .medium))
+                                Text("RE-SCAN")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(0.5)
+                            }
+                            .foregroundStyle(AppTheme.orange)
                         }
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
                 
                 // Store Information
-                VStack(spacing: 8) {
-                    SectionHeader(title: "Store", icon: "storefront")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("STORE")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
                     
-                    if let store = data.storeName {
-                        ParsedRow(label: "Name", value: store)
-                    }
-                    if let address = data.storeAddress {
-                        ParsedRow(label: "Address", value: address)
-                    }
-                    if let phone = data.storePhone {
-                        ParsedRow(label: "Phone", value: phone)
+                    VStack(spacing: 8) {
+                        if let store = data.storeName {
+                            HermesInfoRow(label: "Name", value: store)
+                        }
+                        if let address = data.storeAddress {
+                            HermesInfoRow(label: "Address", value: address)
+                        }
+                        if let phone = data.storePhone {
+                            HermesInfoRow(label: "Phone", value: phone)
+                        }
                     }
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.white)
                 
                 // Transaction Details
-                VStack(spacing: 8) {
-                    SectionHeader(title: "Transaction", icon: "calendar")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("TRANSACTION")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
                     
-                    if let dateStr = data.dateString {
-                        ParsedRow(label: "Date", value: dateStr)
-                    }
-                    if let txNum = data.transactionNumber {
-                        ParsedRow(label: "Receipt #", value: txNum)
-                    }
-                    if let category = data.suggestedCategory {
-                        ParsedRow(label: "Category", value: category)
+                    VStack(spacing: 8) {
+                        if let dateStr = data.dateString {
+                            HermesInfoRow(label: "Date", value: dateStr)
+                        }
+                        if let txNum = data.transactionNumber {
+                            HermesInfoRow(label: "Receipt #", value: txNum)
+                        }
+                        if let category = data.suggestedCategory {
+                            HermesInfoRow(label: "Category", value: category)
+                        }
                     }
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.white)
                 
                 // Financial Breakdown
-                VStack(spacing: 8) {
-                    SectionHeader(title: "Amount", icon: "dollarsign.circle")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("AMOUNT")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
                     
-                    if let subtotal = data.subtotal {
-                        ParsedRow(label: "Subtotal", value: String(format: "$%.2f", subtotal))
-                    }
-                    if let tax = data.tax {
-                        ParsedRow(label: "Tax", value: String(format: "$%.2f", tax))
-                    }
-                    if let tips = data.tips {
-                        ParsedRow(label: "Tips", value: String(format: "$%.2f", tips))
-                    }
-                    if let total = data.total {
-                        ParsedRow(label: "Total", value: String(format: "$%.2f", total), valueColor: .green, isBold: true)
+                    VStack(spacing: 8) {
+                        if let subtotal = data.subtotal {
+                            HermesInfoRow(label: "Subtotal", value: String(format: "$%.2f", subtotal))
+                        }
+                        if let tax = data.tax {
+                            HermesInfoRow(label: "Tax", value: String(format: "$%.2f", tax))
+                        }
+                        if let tips = data.tips {
+                            HermesInfoRow(label: "Tips", value: String(format: "$%.2f", tips))
+                        }
+                        if let total = data.total {
+                            PremiumDivider()
+                                .padding(.vertical, 4)
+                            HStack {
+                                Text("Total")
+                                    .font(.system(.subheadline, design: .serif))
+                                    .foregroundStyle(AppTheme.black)
+                                Spacer()
+                                Text(String(format: "$%.2f", total))
+                                    .font(.system(.title3, design: .default, weight: .medium))
+                                    .foregroundStyle(AppTheme.orange)
+                            }
+                        }
                     }
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.white)
                 
                 // Payment Information
                 if data.paymentMethod != nil || data.cardLastFourDigits != nil {
-                    VStack(spacing: 8) {
-                        SectionHeader(title: "Payment", icon: "creditcard")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("PAYMENT")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
                         
-                        if let method = data.paymentMethod {
-                            ParsedRow(label: "Method", value: method)
-                        }
-                        if let lastFour = data.cardLastFourDigits {
-                            ParsedRow(label: "Card", value: "••••\(lastFour)")
+                        VStack(spacing: 8) {
+                            if let method = data.paymentMethod {
+                                HermesInfoRow(label: "Method", value: method)
+                            }
+                            if let lastFour = data.cardLastFourDigits {
+                                HermesInfoRow(label: "Card", value: "•••• \(lastFour)")
+                            }
                         }
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppTheme.white)
                 }
                 
                 // Items List
                 if let items = data.items, !items.isEmpty {
-                    VStack(spacing: 8) {
-                        SectionHeader(title: "Items (\(items.count))", icon: "list.bullet")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("ITEMS (\(items.count))")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
                         
-                        ForEach(items, id: \.self) { item in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.name)
-                                        .font(.subheadline)
-                                    if let qty = item.quantity, qty > 1 {
-                                        Text("Qty: \(qty)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                        VStack(spacing: 0) {
+                            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.name)
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppTheme.black)
+                                        if let qty = item.quantity, qty > 1 {
+                                            Text("Qty: \(qty)")
+                                                .font(.caption)
+                                                .foregroundStyle(AppTheme.gray)
+                                        }
+                                    }
+                                    Spacer()
+                                    if let price = item.price {
+                                        Text(String(format: "$%.2f", price))
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppTheme.gray)
                                     }
                                 }
-                                Spacer()
-                                if let price = item.price {
-                                    Text(String(format: "$%.2f", price))
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
+                                .padding(.vertical, 8)
+                                
+                                if index < items.count - 1 {
+                                    PremiumDivider()
                                 }
                             }
-                            .padding(.vertical, 2)
                         }
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppTheme.white)
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 2))
+            .shadow(color: AppTheme.cardShadowColor, radius: AppTheme.cardShadowRadius, y: AppTheme.cardShadowY)
         }
         .frame(maxHeight: 300)
     }
@@ -796,46 +851,6 @@ struct AddReceiptView: View {
         }
     }
 }
-
-// MARK: - Helper Views
-
-struct SectionHeader: View {
-    let title: String
-    let icon: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundStyle(.secondary)
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-            Spacer()
-        }
-    }
-}
-
-struct ParsedRow: View {
-    let label: String
-    let value: String
-    var valueColor: Color = .primary
-    var isBold: Bool = false
-    
-    var body: some View {
-        HStack {
-            Text(label)
-                .foregroundStyle(.secondary)
-                .font(.subheadline)
-            Spacer()
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(isBold ? .semibold : .medium)
-                .foregroundStyle(valueColor)
-                .multilineTextAlignment(.trailing)
-        }
-    }
-}
-
 #Preview {
     AddReceiptView()
         .modelContainer(for: Receipt.self, inMemory: true)
