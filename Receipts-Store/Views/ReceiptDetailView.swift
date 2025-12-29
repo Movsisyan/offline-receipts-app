@@ -23,28 +23,32 @@ struct ReceiptDetailView: View {
     @State private var showFullScreenImage = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Receipt Image
-                receiptImageSection
-                
-                // Parsed Information
-                parsedInfoSection
-                
-                // Line Items
-                if !receipt.items.isEmpty {
-                    lineItemsSection
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Receipt Image
+                    receiptImageSection
+                    
+                    // Parsed Information
+                    parsedInfoSection
+                    
+                    // Line Items
+                    if !receipt.items.isEmpty {
+                        lineItemsSection
+                    }
+                    
+                    // Raw OCR Text
+                    if let rawText = receipt.rawText, !rawText.isEmpty {
+                        rawTextSection(rawText)
+                    }
+                    
+                    // Notes
+                    notesSection
                 }
-                
-                // Raw OCR Text
-                if let rawText = receipt.rawText, !rawText.isEmpty {
-                    rawTextSection(rawText)
-                }
-                
-                // Notes
-                notesSection
+                .padding(20)
             }
-            .padding()
         }
         .navigationTitle(receipt.displayName)
         .navigationBarTitleDisplayMode(.inline)
@@ -63,7 +67,9 @@ struct ReceiptDetailView: View {
                         Label("Delete", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .light))
+                        .foregroundStyle(AppTheme.black)
                 }
             }
         }
@@ -83,162 +89,265 @@ struct ReceiptDetailView: View {
         .task {
             await loadAllImages()
         }
+        .tint(AppTheme.orange)
     }
     
     // MARK: - Sections
     
     private var receiptImageSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             // Image with page navigation
             ZStack {
                 if !loadedImages.isEmpty && currentPageIndex < loadedImages.count {
                     Image(uiImage: loadedImages[currentPageIndex])
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .frame(maxHeight: 280)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
                         .onTapGesture {
-                            showFullScreenImage = true
+                            withAnimation(AppTheme.springAnimation) {
+                                showFullScreenImage = true
+                            }
                         }
+                        .overlay(alignment: .bottomTrailing) {
+                            // Elegant zoom hint
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.white)
+                                .padding(8)
+                                .background(Circle().fill(Color.black.opacity(0.4)))
+                                .padding(12)
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
                 } else {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 200)
-                        .overlay {
-                            ProgressView()
+                    // Elegant loading state
+                    VStack(spacing: 16) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(AppTheme.offWhite)
+                                .frame(height: 200)
+                            
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(0.9)
+                                    .tint(AppTheme.orange.opacity(0.6))
+                                
+                                Text("LOADING")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(2)
+                                    .foregroundStyle(AppTheme.gray)
+                            }
                         }
+                    }
                 }
                 
-                // Page navigation arrows
-                if receipt.isMultiPage {
+                // Refined page navigation arrows
+                if receipt.isMultiPage && !loadedImages.isEmpty {
                     HStack {
                         Button {
-                            withAnimation {
+                            withAnimation(AppTheme.springAnimation) {
                                 currentPageIndex = max(0, currentPageIndex - 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.left.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .padding(14)
+                                .background(Circle().fill(Color.black.opacity(0.5)))
                         }
                         .disabled(currentPageIndex == 0)
-                        .opacity(currentPageIndex == 0 ? 0.3 : 1)
+                        .opacity(currentPageIndex == 0 ? 0 : 1)
                         
                         Spacer()
                         
                         Button {
-                            withAnimation {
+                            withAnimation(AppTheme.springAnimation) {
                                 currentPageIndex = min(receipt.pageCount - 1, currentPageIndex + 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.right.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .padding(14)
+                                .background(Circle().fill(Color.black.opacity(0.5)))
                         }
                         .disabled(currentPageIndex == receipt.pageCount - 1)
-                        .opacity(currentPageIndex == receipt.pageCount - 1 ? 0.3 : 1)
+                        .opacity(currentPageIndex == receipt.pageCount - 1 ? 0 : 1)
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 12)
                 }
             }
             
-            // Page indicator
+            // Elegant page indicator
             if receipt.isMultiPage {
-                HStack(spacing: 8) {
-                    ForEach(0..<receipt.pageCount, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentPageIndex ? Color.accentColor : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .onTapGesture {
-                                withAnimation {
-                                    currentPageIndex = index
+                VStack(spacing: 10) {
+                    HStack(spacing: 6) {
+                        ForEach(0..<receipt.pageCount, id: \.self) { index in
+                            Circle()
+                                .fill(index == currentPageIndex ? AppTheme.orange : AppTheme.gray.opacity(0.25))
+                                .frame(width: index == currentPageIndex ? 8 : 6, height: index == currentPageIndex ? 8 : 6)
+                                .animation(AppTheme.springAnimation, value: currentPageIndex)
+                                .onTapGesture {
+                                    withAnimation(AppTheme.springAnimation) {
+                                        currentPageIndex = index
+                                    }
                                 }
-                            }
+                        }
                     }
+                    
+                    Text("PAGE \(currentPageIndex + 1) OF \(receipt.pageCount)")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(1.5)
+                        .foregroundStyle(AppTheme.gray)
                 }
-                
-                Text("Page \(currentPageIndex + 1) of \(receipt.pageCount)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
     }
     
     private var parsedInfoSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 1) {
             // Store Info
-            VStack(spacing: 12) {
-                InfoRow(label: "Store", value: receipt.displayName, icon: "storefront")
+            VStack(alignment: .leading, spacing: 16) {
+                Text("STORE")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
                 
-                if let address = receipt.storeAddress, !address.isEmpty {
-                    InfoRow(label: "Address", value: address, icon: "mappin.and.ellipse")
-                }
-                
-                if let phone = receipt.storePhone, !phone.isEmpty {
-                    InfoRow(label: "Phone", value: phone, icon: "phone")
+                VStack(spacing: 12) {
+                    HermesInfoRow(label: "Name", value: receipt.displayName)
+                    
+                    if let address = receipt.storeAddress, !address.isEmpty {
+                        HermesInfoRow(label: "Address", value: address)
+                    }
+                    
+                    if let phone = receipt.storePhone, !phone.isEmpty {
+                        HermesInfoRow(label: "Phone", value: phone)
+                    }
                 }
             }
-            
-            Divider()
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
             
             // Transaction Info
-            VStack(spacing: 12) {
-                InfoRow(label: "Date", value: receipt.formattedDate, icon: "calendar")
+            VStack(alignment: .leading, spacing: 16) {
+                Text("TRANSACTION")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
                 
-                if let txNumber = receipt.transactionNumber, !txNumber.isEmpty {
-                    InfoRow(label: "Receipt #", value: txNumber, icon: "number")
+                VStack(spacing: 12) {
+                    HermesInfoRow(label: "Date", value: receipt.formattedDate)
+                    
+                    if let txNumber = receipt.transactionNumber, !txNumber.isEmpty {
+                        HermesInfoRow(label: "Receipt #", value: txNumber)
+                    }
+                    
+                    HermesInfoRow(label: "Category", value: receipt.category.rawValue)
+                    
+                    if let folder = receipt.folder {
+                        HStack {
+                            Text("Folder")
+                                .font(.subheadline)
+                                .foregroundStyle(AppTheme.gray)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(folder.color)
+                                    .frame(width: 8, height: 8)
+                                Text(folder.name)
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppTheme.black)
+                            }
+                        }
+                    }
                 }
-                
-                InfoRow(label: "Category", value: receipt.category.rawValue, icon: receipt.category.icon)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
             
-            Divider()
-            
-            // Financial Breakdown
-            VStack(spacing: 12) {
-                if receipt.subtotal != nil {
-                    InfoRow(label: "Subtotal", value: receipt.formattedSubtotal, icon: "cart")
-                }
+            // Amount
+            VStack(alignment: .leading, spacing: 16) {
+                Text("AMOUNT")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
                 
-                if receipt.tax != nil {
-                    InfoRow(label: "Tax", value: receipt.formattedTax, icon: "percent")
+                VStack(spacing: 12) {
+                    if receipt.subtotal != nil {
+                        HermesInfoRow(label: "Subtotal", value: receipt.formattedSubtotal)
+                    }
+                    
+                    if receipt.tax != nil {
+                        HermesInfoRow(label: "Tax", value: receipt.formattedTax)
+                    }
+                    
+                    if receipt.tips != nil {
+                        HermesInfoRow(label: "Tips", value: receipt.formattedTips)
+                    }
+                    
+                    PremiumDivider()
+                        .padding(.vertical, 4)
+                    
+                    HStack {
+                        Text("Total")
+                            .font(.system(.subheadline, design: .serif, weight: .regular))
+                            .foregroundStyle(AppTheme.black)
+                        
+                        Spacer()
+                        
+                        Text(receipt.formattedTotal)
+                            .font(.system(.title2, design: .default, weight: .medium))
+                            .foregroundStyle(AppTheme.orange)
+                    }
                 }
-                
-                if receipt.tips != nil {
-                    InfoRow(label: "Tips", value: receipt.formattedTips, icon: "heart")
-                }
-                
-                InfoRow(label: "Total", value: receipt.formattedTotal, icon: "dollarsign.circle", valueColor: .green)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
             
-            Divider()
-            
-            // Payment Info
-            VStack(spacing: 12) {
-                InfoRow(label: "Payment", value: receipt.paymentDisplay, icon: receipt.paymentMethod.icon)
+            // Payment
+            VStack(alignment: .leading, spacing: 16) {
+                Text("PAYMENT")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
+                
+                HermesInfoRow(label: "Method", value: receipt.paymentDisplay)
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppTheme.white)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     private var lineItemsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Items")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("ITEMS")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+                .padding(.bottom, 16)
             
             ForEach(receipt.items) { item in
                 HStack {
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(item.name)
                             .font(.subheadline)
+                            .foregroundStyle(AppTheme.black)
                         if !item.displayQuantity.isEmpty {
                             Text(item.displayQuantity)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AppTheme.gray)
                         }
                     }
                     
@@ -246,64 +355,90 @@ struct ReceiptDetailView: View {
                     
                     Text(item.formattedPrice)
                         .font(.subheadline)
-                        .fontWeight(.medium)
+                        .foregroundStyle(AppTheme.orange)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 12)
                 
                 if item.id != receipt.items.last?.id {
-                    Divider()
+                    PremiumDivider()
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     private func rawTextSection(_ text: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Raw Text")
-                    .font(.headline)
+                Text("RAW TEXT")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(2)
+                    .foregroundStyle(AppTheme.gray)
+                
                 Spacer()
+                
                 Button {
                     UIPasteboard.general.string = text
                 } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.caption)
+                    Text("COPY")
+                        .font(.system(.caption2, design: .default, weight: .regular))
+                        .tracking(1)
+                        .foregroundStyle(AppTheme.orange)
                 }
             }
+            .padding(.bottom, 16)
             
             Text(text)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(AppTheme.gray)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(AppTheme.offWhite)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Notes")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("NOTES")
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(2)
+                .foregroundStyle(AppTheme.gray)
+                .padding(.bottom, 16)
             
             if let notes = receipt.notes, !notes.isEmpty {
                 Text(notes)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                Text("No notes")
+                Text("Tap Edit to add notes")
                     .font(.subheadline)
-                    .foregroundStyle(.tertiary)
                     .italic()
+                    .foregroundStyle(AppTheme.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(20)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+        )
     }
     
     // MARK: - Actions
@@ -331,33 +466,6 @@ struct ReceiptDetailView: View {
         dismiss()
     }
 }
-
-// MARK: - Info Row
-
-struct InfoRow: View {
-    let label: String
-    let value: String
-    let icon: String
-    var valueColor: Color = .primary
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            
-            Text(label)
-                .foregroundStyle(.secondary)
-            
-            Spacer()
-            
-            Text(value)
-                .fontWeight(.medium)
-                .foregroundStyle(valueColor)
-        }
-    }
-}
-
 // MARK: - Full Screen Image View
 
 struct FullScreenImageView: View {
@@ -376,71 +484,87 @@ struct FullScreenImageView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                if images.isEmpty {
-                    Text("No images")
-                        .foregroundStyle(.white)
-                } else {
-                    TabView(selection: $currentIndex) {
-                        ForEach(0..<images.count, id: \.self) { index in
-                            GeometryReader { geometry in
-                                Image(uiImage: images[index])
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .scaleEffect(scale)
-                                    .gesture(
-                                        MagnificationGesture()
-                                            .onChanged { value in
-                                                scale = lastScale * value
-                                            }
-                                            .onEnded { _ in
-                                                lastScale = scale
-                                                if scale < 1.0 {
-                                                    withAnimation {
-                                                        scale = 1.0
-                                                        lastScale = 1.0
-                                                    }
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            if images.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("No Images")
+                        .font(.system(.caption, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            } else {
+                TabView(selection: $currentIndex) {
+                    ForEach(0..<images.count, id: \.self) { index in
+                        GeometryReader { geometry in
+                            Image(uiImage: images[index])
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .scaleEffect(scale)
+                                .gesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in
+                                            scale = lastScale * value
+                                        }
+                                        .onEnded { _ in
+                                            lastScale = scale
+                                            if scale < 1.0 {
+                                                withAnimation(.easeOut(duration: 0.2)) {
+                                                    scale = 1.0
+                                                    lastScale = 1.0
                                                 }
                                             }
-                                    )
-                                    .frame(width: geometry.size.width, height: geometry.size.height)
-                            }
-                            .tag(index)
+                                        }
+                                )
+                                .frame(width: geometry.size.width, height: geometry.size.height)
                         }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .automatic : .never))
-                    .indexViewStyle(.page(backgroundDisplayMode: .always))
-                }
-                
-                // Page indicator for multi-page
-                if images.count > 1 {
-                    VStack {
-                        Spacer()
-                        Text("Page \(currentIndex + 1) of \(images.count)")
-                            .font(.caption)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                            .padding(.bottom, 60)
+                        .tag(index)
                     }
                 }
+                .tabViewStyle(.page(indexDisplayMode: .never))
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+            
+            // Custom page indicator and close button
+            VStack {
+                // Close button
+                HStack {
+                    Spacer()
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
+                            .padding(12)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Circle())
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                
+                Spacer()
+                
+                // Page indicator
+                if images.count > 1 {
+                    HStack(spacing: 6) {
+                        ForEach(0..<images.count, id: \.self) { index in
+                            Circle()
+                                .fill(index == currentIndex ? AppTheme.orange : Color.white.opacity(0.3))
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.3))
+                    .clipShape(Capsule())
+                    .padding(.bottom, 40)
+                }
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 }

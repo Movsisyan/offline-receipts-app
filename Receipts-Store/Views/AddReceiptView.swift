@@ -102,102 +102,96 @@ struct AddReceiptView: View {
     
     // MARK: - Mode Selection View
     
+    @State private var iconBounce = false
+    
     private var modeSelectionView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
             
-            Image(systemName: "doc.text.viewfinder")
-                .font(.system(size: 80))
-                .foregroundStyle(.secondary)
-            
-            Text("How would you like to add a receipt?")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                // Single Page Button
-                Button {
-                    captureMode = .single
-                } label: {
-                    HStack {
-                        Image(systemName: "doc")
-                            .font(.title2)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Single Page")
-                                .fontWeight(.semibold)
-                            Text("Capture and process immediately")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
+            VStack(spacing: 0) {
+                Spacer()
+                
+                // Animated elegant icon
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.orangeLight)
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(iconBounce ? 1.05 : 1.0)
+                    
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(AppTheme.orange)
+                }
+                .padding(.bottom, 32)
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                        iconBounce = true
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
-                // Multi Page Button
-                Button {
-                    captureMode = .multi
-                } label: {
-                    HStack {
-                        Image(systemName: "doc.on.doc")
-                            .font(.title2)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Multi-Page Receipt")
-                                .fontWeight(.semibold)
-                            Text("Add all pages, then process")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .foregroundStyle(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+                Text("ADD RECEIPT")
+                    .font(.system(.caption, design: .default, weight: .semibold))
+                    .tracking(4)
+                    .foregroundStyle(AppTheme.gray)
+                    .padding(.bottom, 8)
                 
-                // Folder selection
-                Button {
-                    showFolderPicker = true
-                } label: {
-                    HStack {
-                        if let folder = selectedFolder {
-                            Image(systemName: folder.iconName)
-                                .font(.title2)
-                                .foregroundStyle(folder.color)
-                        } else {
-                            Image(systemName: "folder")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
+                Text("Choose your capture method")
+                    .font(.system(.title3, design: .serif))
+                    .foregroundStyle(AppTheme.black)
+                
+                Spacer()
+                
+                VStack(spacing: 12) {
+                    // Single Page - Card
+                    ModeSelectionCard(
+                        icon: "doc",
+                        title: "SINGLE PAGE",
+                        subtitle: "Quick capture with instant processing"
+                    ) {
+                        withAnimation(AppTheme.springAnimation) {
+                            captureMode = .single
                         }
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Save to Folder")
-                                .fontWeight(.medium)
-                            Text(selectedFolder?.name ?? "No folder selected")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.secondary)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .foregroundStyle(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    
+                    // Multi Page - Card
+                    ModeSelectionCard(
+                        icon: "doc.on.doc",
+                        title: "MULTI-PAGE",
+                        subtitle: "Add all pages, then process together"
+                    ) {
+                        withAnimation(AppTheme.springAnimation) {
+                            captureMode = .multi
+                        }
+                    }
+                    
+                    // Folder selection
+                    Button {
+                        showFolderPicker = true
+                    } label: {
+                        HStack {
+                            if let folder = selectedFolder {
+                                Circle()
+                                    .fill(folder.color)
+                                    .frame(width: 8, height: 8)
+                            }
+                            
+                            Text(selectedFolder?.name.uppercased() ?? "NO FOLDER")
+                                .font(.system(.caption2, design: .default, weight: .medium))
+                                .tracking(1)
+                                .foregroundStyle(selectedFolder != nil ? AppTheme.orange : AppTheme.gray)
+                            
+                            Spacer()
+                            
+                            Text("CHANGE")
+                                .font(.system(.caption2, design: .default, weight: .regular))
+                                .tracking(1)
+                                .foregroundStyle(AppTheme.orange)
+                        }
+                        .padding(16)
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
     }
@@ -224,59 +218,84 @@ struct AddReceiptView: View {
     // MARK: - Capture Options
     
     private var captureOptionsView: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        ZStack {
+            AppTheme.cream.ignoresSafeArea()
             
-            Image(systemName: captureMode == .single ? "doc" : "doc.on.doc")
-                .font(.system(size: 60))
-                .foregroundStyle(.secondary)
-            
-            VStack(spacing: 8) {
-                Text(captureMode == .single ? "Single Page Receipt" : "Multi-Page Receipt")
-                    .font(.title3)
-                    .fontWeight(.medium)
+            VStack(spacing: 0) {
+                Spacer()
                 
-                Text(captureMode == .single ? "Take a photo to scan immediately" : "Add all pages, then process together")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                if CameraCaptureView.isCameraAvailable {
-                    Button {
-                        showCamera = true
-                    } label: {
-                        Label("Take Photo", systemImage: "camera.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.accentColor)
+                // Elegant icon
+                Image(systemName: captureMode == .single ? "doc" : "doc.on.doc")
+                    .font(.system(size: 56, weight: .ultraLight))
+                    .foregroundStyle(AppTheme.orange)
+                    .padding(.bottom, 24)
+                
+                Text(captureMode == .single ? "SINGLE PAGE" : "MULTI-PAGE")
+                    .font(.system(.caption, design: .default, weight: .medium))
+                    .tracking(3)
+                    .foregroundStyle(AppTheme.gray)
+                    .padding(.bottom, 8)
+                
+                Text(captureMode == .single ? "Quick capture with instant processing" : "Add all pages, then process together")
+                    .font(.system(.body, design: .serif))
+                    .foregroundStyle(AppTheme.black)
+                    .multilineTextAlignment(.center)
+                
+                Spacer()
+                
+                VStack(spacing: 16) {
+                    if CameraCaptureView.isCameraAvailable {
+                        Button {
+                            showCamera = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "camera")
+                                    .font(.system(size: 14, weight: .light))
+                                Text("TAKE PHOTO")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(1.5)
+                            }
                             .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(AppTheme.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: 2))
+                        }
                     }
-                }
-                
-                Button {
-                    showPhotoLibrary = true
-                } label: {
-                    Label("Choose from Library", systemImage: "photo.on.rectangle")
+                    
+                    Button {
+                        showPhotoLibrary = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "photo")
+                                .font(.system(size: 14, weight: .light))
+                            Text("CHOOSE FROM LIBRARY")
+                                .font(.system(.caption2, design: .default, weight: .medium))
+                                .tracking(1.5)
+                        }
+                        .foregroundStyle(AppTheme.black)
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.secondarySystemBackground))
-                        .foregroundStyle(.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.vertical, 16)
+                        .background(AppTheme.white)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 2)
+                                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
+                        )
+                    }
+                    
+                    // Back to mode selection
+                    Button {
+                        captureMode = nil
+                    } label: {
+                        Text("Change Mode")
+                            .font(.system(.caption))
+                            .foregroundStyle(AppTheme.gray)
+                            .underline()
+                    }
+                    .padding(.top, 8)
                 }
-                
-                // Back to mode selection
-                Button {
-                    captureMode = nil
-                } label: {
-                    Text("Change Mode")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 8)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
     }
@@ -288,10 +307,12 @@ struct AddReceiptView: View {
             // Mode indicator
             HStack {
                 Image(systemName: captureMode == .single ? "doc" : "doc.on.doc")
-                    .foregroundStyle(.secondary)
-                Text(captureMode == .single ? "Single Page" : "Multi-Page")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .light))
+                    .foregroundStyle(AppTheme.gray)
+                Text(captureMode == .single ? "SINGLE PAGE" : "MULTI-PAGE")
+                    .font(.system(.caption2, design: .default, weight: .medium))
+                    .tracking(1)
+                    .foregroundStyle(AppTheme.gray)
                 Spacer()
             }
             
@@ -303,39 +324,44 @@ struct AddReceiptView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(maxHeight: hasProcessed ? 150 : 200)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                        .shadow(color: AppTheme.cardShadowColor, radius: AppTheme.cardShadowRadius, y: AppTheme.cardShadowY)
                 }
                 
                 // Page navigation (multi-page only)
                 if capturedImages.count > 1 {
                     HStack {
                         Button {
-                            withAnimation {
+                            withAnimation(.easeInOut(duration: 0.2)) {
                                 currentPageIndex = max(0, currentPageIndex - 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.left.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .padding(10)
+                                .background(AppTheme.black.opacity(0.5))
+                                .clipShape(Circle())
                         }
                         .disabled(currentPageIndex == 0)
-                        .opacity(currentPageIndex == 0 ? 0.3 : 1)
+                        .opacity(currentPageIndex == 0 ? 0 : 1)
                         
                         Spacer()
                         
                         Button {
-                            withAnimation {
+                            withAnimation(.easeInOut(duration: 0.2)) {
                                 currentPageIndex = min(capturedImages.count - 1, currentPageIndex + 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.right.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
-                                .shadow(radius: 2)
+                                .padding(10)
+                                .background(AppTheme.black.opacity(0.5))
+                                .clipShape(Circle())
                         }
                         .disabled(currentPageIndex == capturedImages.count - 1)
-                        .opacity(currentPageIndex == capturedImages.count - 1 ? 0.3 : 1)
+                        .opacity(currentPageIndex == capturedImages.count - 1 ? 0 : 1)
                     }
                     .padding(.horizontal, 8)
                 }
@@ -343,13 +369,13 @@ struct AddReceiptView: View {
             
             // Page indicator dots (multi-page only)
             if capturedImages.count > 1 {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     ForEach(0..<capturedImages.count, id: \.self) { index in
                         Circle()
-                            .fill(index == currentPageIndex ? Color.accentColor : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
+                            .fill(index == currentPageIndex ? AppTheme.orange : AppTheme.gray.opacity(0.3))
+                            .frame(width: 6, height: 6)
                             .onTapGesture {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.2)) {
                                     currentPageIndex = index
                                 }
                             }
@@ -361,8 +387,8 @@ struct AddReceiptView: View {
             if captureMode == .multi {
                 HStack {
                     Text("\(capturedImages.count) page\(capturedImages.count == 1 ? "" : "s") added")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.system(.caption))
+                        .foregroundStyle(AppTheme.gray)
                     
                     Spacer()
                     
@@ -382,8 +408,14 @@ struct AddReceiptView: View {
                                 Label("Choose from Library", systemImage: "photo")
                             }
                         } label: {
-                            Label("Add Page", systemImage: "plus.circle")
-                                .font(.subheadline)
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("ADD PAGE")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(1)
+                            }
+                            .foregroundStyle(AppTheme.orange)
                         }
                     }
                 }
@@ -401,17 +433,26 @@ struct AddReceiptView: View {
                         await processAllImages()
                     }
                 } label: {
-                    Label("Process Receipt", systemImage: "doc.text.magnifyingglass")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.accentColor)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    HStack {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 14, weight: .light))
+                        Text("PROCESS RECEIPT")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(1.5)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppTheme.orange)
+                    .clipShape(RoundedRectangle(cornerRadius: 2))
                 }
                 .padding(.top, 8)
             }
             
-            Spacer()
+            // Only add spacer when not showing parsed results
+            if !hasProcessed {
+                Spacer()
+            }
             
             // Action buttons
             if !isProcessing {
@@ -427,12 +468,21 @@ struct AddReceiptView: View {
                 Button {
                     removeCurrentPage()
                 } label: {
-                    Label("Remove", systemImage: "trash")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.1))
-                        .foregroundStyle(.red)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .light))
+                        Text("REMOVE")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(1)
+                    }
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.red.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2)
+                            .strokeBorder(Color.red.opacity(0.2), lineWidth: 1)
+                    )
                 }
             }
             
@@ -452,14 +502,21 @@ struct AddReceiptView: View {
                     hasProcessed = false
                 }
             } label: {
-                Label(
-                    hasProcessed ? "Edit Pages" : (captureMode == .single ? "Retake" : "Start Over"),
-                    systemImage: hasProcessed ? "pencil" : "arrow.counterclockwise"
+                HStack(spacing: 6) {
+                    Image(systemName: hasProcessed ? "pencil" : "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .light))
+                    Text((hasProcessed ? "Edit Pages" : (captureMode == .single ? "Retake" : "Start Over")).uppercased())
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(1)
+                }
+                .foregroundStyle(AppTheme.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(AppTheme.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 2)
+                        .strokeBorder(AppTheme.lightGray, lineWidth: 1)
                 )
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -475,142 +532,201 @@ struct AddReceiptView: View {
     private var processingView: some View {
         VStack(spacing: 16) {
             ProgressView()
-                .scaleEffect(1.5)
+                .scaleEffect(1.2)
+                .tint(AppTheme.orange)
             
-            Text(processingStatus)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Text(processingStatus.uppercased())
+                .font(.system(.caption2, design: .default, weight: .medium))
+                .tracking(1)
+                .foregroundStyle(AppTheme.gray)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 2))
     }
     
     // MARK: - Parsed Result View
     
     private func parsedResultView(_ data: ParsedReceiptData) -> some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 1) {
+                // Header
                 HStack {
-                    Text("Parsed Receipt")
-                        .font(.headline)
+                    Text("PARSED RECEIPT")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
+                    
                     Spacer()
+                    
                     if captureMode == .multi {
                         Button {
                             hasProcessed = false
                             parsedData = nil
                             rawText = nil
                         } label: {
-                            Label("Re-scan", systemImage: "arrow.clockwise")
-                                .font(.caption)
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 10, weight: .medium))
+                                Text("RE-SCAN")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(0.5)
+                            }
+                            .foregroundStyle(AppTheme.orange)
                         }
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
                 
                 // Store Information
-                VStack(spacing: 8) {
-                    SectionHeader(title: "Store", icon: "storefront")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("STORE")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
                     
-                    if let store = data.storeName {
-                        ParsedRow(label: "Name", value: store)
-                    }
-                    if let address = data.storeAddress {
-                        ParsedRow(label: "Address", value: address)
-                    }
-                    if let phone = data.storePhone {
-                        ParsedRow(label: "Phone", value: phone)
+                    VStack(spacing: 8) {
+                        if let store = data.storeName {
+                            HermesInfoRow(label: "Name", value: store)
+                        }
+                        if let address = data.storeAddress {
+                            HermesInfoRow(label: "Address", value: address)
+                        }
+                        if let phone = data.storePhone {
+                            HermesInfoRow(label: "Phone", value: phone)
+                        }
                     }
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.white)
                 
                 // Transaction Details
-                VStack(spacing: 8) {
-                    SectionHeader(title: "Transaction", icon: "calendar")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("TRANSACTION")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
                     
-                    if let dateStr = data.dateString {
-                        ParsedRow(label: "Date", value: dateStr)
-                    }
-                    if let txNum = data.transactionNumber {
-                        ParsedRow(label: "Receipt #", value: txNum)
-                    }
-                    if let category = data.suggestedCategory {
-                        ParsedRow(label: "Category", value: category)
+                    VStack(spacing: 8) {
+                        if let dateStr = data.dateString {
+                            HermesInfoRow(label: "Date", value: dateStr)
+                        }
+                        if let txNum = data.transactionNumber {
+                            HermesInfoRow(label: "Receipt #", value: txNum)
+                        }
+                        if let category = data.suggestedCategory {
+                            HermesInfoRow(label: "Category", value: category)
+                        }
                     }
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.white)
                 
                 // Financial Breakdown
-                VStack(spacing: 8) {
-                    SectionHeader(title: "Amount", icon: "dollarsign.circle")
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("AMOUNT")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(2)
+                        .foregroundStyle(AppTheme.gray)
                     
-                    if let subtotal = data.subtotal {
-                        ParsedRow(label: "Subtotal", value: String(format: "$%.2f", subtotal))
-                    }
-                    if let tax = data.tax {
-                        ParsedRow(label: "Tax", value: String(format: "$%.2f", tax))
-                    }
-                    if let tips = data.tips {
-                        ParsedRow(label: "Tips", value: String(format: "$%.2f", tips))
-                    }
-                    if let total = data.total {
-                        ParsedRow(label: "Total", value: String(format: "$%.2f", total), valueColor: .green, isBold: true)
+                    VStack(spacing: 8) {
+                        if let subtotal = data.subtotal {
+                            HermesInfoRow(label: "Subtotal", value: String(format: "$%.2f", subtotal))
+                        }
+                        if let tax = data.tax {
+                            HermesInfoRow(label: "Tax", value: String(format: "$%.2f", tax))
+                        }
+                        if let tips = data.tips {
+                            HermesInfoRow(label: "Tips", value: String(format: "$%.2f", tips))
+                        }
+                        if let total = data.total {
+                            PremiumDivider()
+                                .padding(.vertical, 4)
+                            HStack {
+                                Text("Total")
+                                    .font(.system(.subheadline, design: .serif))
+                                    .foregroundStyle(AppTheme.black)
+                                Spacer()
+                                Text(String(format: "$%.2f", total))
+                                    .font(.system(.title3, design: .default, weight: .medium))
+                                    .foregroundStyle(AppTheme.orange)
+                            }
+                        }
                     }
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.white)
                 
                 // Payment Information
                 if data.paymentMethod != nil || data.cardLastFourDigits != nil {
-                    VStack(spacing: 8) {
-                        SectionHeader(title: "Payment", icon: "creditcard")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("PAYMENT")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
                         
-                        if let method = data.paymentMethod {
-                            ParsedRow(label: "Method", value: method)
-                        }
-                        if let lastFour = data.cardLastFourDigits {
-                            ParsedRow(label: "Card", value: "••••\(lastFour)")
+                        VStack(spacing: 8) {
+                            if let method = data.paymentMethod {
+                                HermesInfoRow(label: "Method", value: method)
+                            }
+                            if let lastFour = data.cardLastFourDigits {
+                                HermesInfoRow(label: "Card", value: "•••• \(lastFour)")
+                            }
                         }
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppTheme.white)
                 }
                 
                 // Items List
                 if let items = data.items, !items.isEmpty {
-                    VStack(spacing: 8) {
-                        SectionHeader(title: "Items (\(items.count))", icon: "list.bullet")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("ITEMS (\(items.count))")
+                            .font(.system(.caption2, design: .default, weight: .medium))
+                            .tracking(2)
+                            .foregroundStyle(AppTheme.gray)
                         
-                        ForEach(items, id: \.self) { item in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.name)
-                                        .font(.subheadline)
-                                    if let qty = item.quantity, qty > 1 {
-                                        Text("Qty: \(qty)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                        VStack(spacing: 0) {
+                            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.name)
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppTheme.black)
+                                        if let qty = item.quantity, qty > 1 {
+                                            Text("Qty: \(qty)")
+                                                .font(.caption)
+                                                .foregroundStyle(AppTheme.gray)
+                                        }
+                                    }
+                                    Spacer()
+                                    if let price = item.price {
+                                        Text(String(format: "$%.2f", price))
+                                            .font(.subheadline)
+                                            .foregroundStyle(AppTheme.gray)
                                     }
                                 }
-                                Spacer()
-                                if let price = item.price {
-                                    Text(String(format: "$%.2f", price))
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
+                                .padding(.vertical, 8)
+                                
+                                if index < items.count - 1 {
+                                    PremiumDivider()
                                 }
                             }
-                            .padding(.vertical, 2)
                         }
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppTheme.white)
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 2))
+            .shadow(color: AppTheme.cardShadowColor, radius: AppTheme.cardShadowRadius, y: AppTheme.cardShadowY)
         }
         .frame(maxHeight: 300)
     }
@@ -715,42 +831,63 @@ struct AddReceiptView: View {
     }
 }
 
-// MARK: - Helper Views
+// MARK: - Mode Selection Card
 
-struct SectionHeader: View {
-    let title: String
+struct ModeSelectionCard: View {
     let icon: String
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+    
+    @State private var isPressed = false
     
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundStyle(.secondary)
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-            Spacer()
+        Button(action: action) {
+            HStack(spacing: 16) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.cream)
+                        .frame(width: 48, height: 48)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .light))
+                        .foregroundStyle(AppTheme.orange)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(.caption, design: .default, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(AppTheme.black)
+                    
+                    Text(subtitle)
+                        .font(.system(.caption))
+                        .foregroundStyle(AppTheme.gray)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(AppTheme.orange)
+            }
+            .padding(16)
+            .background(AppTheme.white)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .shadow(
+                color: isPressed ? AppTheme.elevatedShadowColor : AppTheme.cardShadowColor,
+                radius: isPressed ? AppTheme.elevatedShadowRadius : AppTheme.cardShadowRadius,
+                y: isPressed ? AppTheme.elevatedShadowY : AppTheme.cardShadowY
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
-    }
-}
-
-struct ParsedRow: View {
-    let label: String
-    let value: String
-    var valueColor: Color = .primary
-    var isBold: Bool = false
-    
-    var body: some View {
-        HStack {
-            Text(label)
-                .foregroundStyle(.secondary)
-                .font(.subheadline)
-            Spacer()
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(isBold ? .semibold : .medium)
-                .foregroundStyle(valueColor)
-                .multilineTextAlignment(.trailing)
-        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+            withAnimation(AppTheme.quickAnimation) {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 

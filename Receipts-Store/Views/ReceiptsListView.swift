@@ -23,14 +23,12 @@ struct ReceiptsListView: View {
     private var filteredReceipts: [Receipt] {
         var result = receipts
         
-        // Filter by folder or unfiled
         if showUnfiledOnly {
             result = result.filter { $0.folder == nil }
         } else if let folder = selectedFolder {
             result = result.filter { $0.folder?.id == folder.id }
         }
         
-        // Filter by search
         if !searchText.isEmpty {
             result = result.filter { receipt in
                 receipt.displayName.localizedCaseInsensitiveContains(searchText) ||
@@ -46,48 +44,39 @@ struct ReceiptsListView: View {
     }
     
     private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
+        GridItem(.flexible(), spacing: 20),
+        GridItem(.flexible(), spacing: 20)
     ]
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Folder tabs
-                folderTabsView
+            ZStack {
+                // Cream background
+                AppTheme.cream
+                    .ignoresSafeArea()
                 
-                // Content
-                Group {
-                    if selectedFolder == nil && !showUnfiledOnly && receipts.isEmpty {
-                        emptyStateView
-                    } else if filteredReceipts.isEmpty {
-                        noResultsView
-                    } else {
-                        receiptsGrid
+                VStack(spacing: 0) {
+                    // Custom header
+                    customHeaderView
+                    
+                    // Folder tabs
+                    folderTabsView
+                    
+                    // Content
+                    Group {
+                        if selectedFolder == nil && !showUnfiledOnly && receipts.isEmpty {
+                            emptyStateView
+                        } else if filteredReceipts.isEmpty {
+                            noResultsView
+                        } else {
+                            receiptsGrid
+                        }
                     }
                 }
             }
-            .navigationTitle(showUnfiledOnly ? "Unfiled" : (selectedFolder?.name ?? "All Receipts"))
-            .searchable(text: $searchText, prompt: "Search receipts")
+            .navigationBarHidden(true)
             .navigationDestination(item: $selectedReceipt) { receipt in
                 ReceiptDetailView(receipt: receipt)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showFolderManagement = true
-                    } label: {
-                        Image(systemName: "folder.badge.gearshape")
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddReceipt = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
             }
             .sheet(isPresented: $showAddReceipt) {
                 AddReceiptView(initialFolder: selectedFolder)
@@ -98,37 +87,65 @@ struct ReceiptsListView: View {
                 }
             }
         }
+        .tint(AppTheme.orange)
+    }
+    
+    // MARK: - Custom Header
+    
+    private var customHeaderView: some View {
+        HStack {
+            Button {
+                showFolderManagement = true
+            } label: {
+                Image(systemName: "folder")
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(AppTheme.black)
+                    .padding(12)
+                    .background(Circle().fill(AppTheme.white))
+                    .shadow(color: AppTheme.cardShadowColor, radius: 4, y: 2)
+            }
+            
+            Spacer()
+            
+            Button {
+                showAddReceipt = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(AppTheme.orange)
+                    .padding(12)
+                    .background(Circle().fill(AppTheme.white))
+                    .shadow(color: AppTheme.cardShadowColor, radius: 4, y: 2)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
     
     // MARK: - Folder Tabs
     
     private var folderTabsView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                // All Receipts tab
-                FolderTab(
+            HStack(spacing: 0) {
+                // All tab
+                HermesTab(
                     name: "All",
-                    icon: "tray.full",
-                    color: .accentColor,
-                    count: receipts.count,
                     isSelected: selectedFolder == nil && !showUnfiledOnly
                 ) {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         selectedFolder = nil
                         showUnfiledOnly = false
                     }
                 }
                 
-                // Unfoldered tab (only if there are unfoldered receipts and folders exist)
+                // Unfiled tab
                 if !folders.isEmpty && !unfolderedReceipts.isEmpty {
-                    FolderTab(
+                    HermesTab(
                         name: "Unfiled",
-                        icon: "tray",
-                        color: .gray,
-                        count: unfolderedReceipts.count,
                         isSelected: showUnfiledOnly
                     ) {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.2)) {
                             selectedFolder = nil
                             showUnfiledOnly = true
                         }
@@ -137,79 +154,91 @@ struct ReceiptsListView: View {
                 
                 // Folder tabs
                 ForEach(folders) { folder in
-                    FolderTab(
+                    HermesTab(
                         name: folder.name,
-                        icon: folder.iconName,
-                        color: folder.color,
-                        count: folder.receiptCount,
                         isSelected: selectedFolder?.id == folder.id && !showUnfiledOnly
                     ) {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.2)) {
                             selectedFolder = folder
                             showUnfiledOnly = false
                         }
                     }
                 }
-                
-                // Add folder button
-                Button {
-                    showFolderManagement = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
         }
-        .background(Color(.systemBackground))
+        .padding(.vertical, 16)
+        .background(AppTheme.white)
+        .overlay(alignment: .bottom) {
+            AppTheme.lightGray.frame(height: 1)
+        }
     }
     
     // MARK: - Empty State
     
     private var emptyStateView: some View {
-        ContentUnavailableView {
-            Label("No Receipts", systemImage: "doc.text.magnifyingglass")
-        } description: {
-            Text("Tap the + button to scan your first receipt")
-        }
+        PremiumEmptyState(
+            icon: "doc.text",
+            title: "No Receipts",
+            message: "Capture your first receipt to begin organizing your expenses.",
+            action: { showAddReceipt = true },
+            actionLabel: "Add Receipt"
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var noResultsView: some View {
-        ContentUnavailableView {
-            Label("No Results", systemImage: "magnifyingglass")
-        } description: {
-            if let folder = selectedFolder {
-                Text("No receipts found in '\(folder.name)'")
-            } else {
-                Text("No receipts match your search")
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(AppTheme.offWhite)
+                    .frame(width: 80, height: 80)
+                
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 28, weight: .ultraLight))
+                    .foregroundStyle(AppTheme.gray)
+            }
+            
+            VStack(spacing: 8) {
+                Text("No Results")
+                    .font(.system(.title3, design: .serif))
+                    .foregroundStyle(AppTheme.black)
+                
+                Text(showUnfiledOnly ? "No unfiled receipts to display" : "Try a different search term")
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.gray)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - Receipts Grid
     
     private var receiptsGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(filteredReceipts) { receipt in
-                    ReceiptCard(receipt: receipt)
+            LazyVGrid(columns: columns, spacing: 20) {
+                ForEach(Array(filteredReceipts.enumerated()), id: \.element.id) { index, receipt in
+                    HermesReceiptCard(receipt: receipt)
                         .onTapGesture {
-                            selectedReceipt = receipt
+                            withAnimation(AppTheme.springAnimation) {
+                                selectedReceipt = receipt
+                            }
                         }
                         .contextMenu {
-                            // Move to folder
                             Menu {
                                 Button {
-                                    receipt.folder = nil
+                                    withAnimation {
+                                        receipt.folder = nil
+                                    }
                                 } label: {
-                                    Label("No Folder", systemImage: "tray")
+                                    Label("Remove from Folder", systemImage: "tray")
                                 }
                                 
                                 ForEach(folders) { folder in
                                     Button {
-                                        receipt.folder = folder
+                                        withAnimation {
+                                            receipt.folder = folder
+                                        }
                                     } label: {
                                         Label(folder.name, systemImage: folder.iconName)
                                     }
@@ -226,17 +255,21 @@ struct ReceiptsListView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .bottom)),
+                            removal: .opacity.combined(with: .scale(scale: 0.95))
+                        ))
                 }
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 40)
         }
+        .scrollIndicators(.hidden)
     }
-    
-    // MARK: - Actions
     
     private func deleteReceipt(_ receipt: Receipt) {
         Task {
-            // Delete all image files for multi-page receipts
             for filename in receipt.imageFileNames {
                 try? await ImageStorageService.shared.deleteImage(filename: filename)
             }
@@ -245,127 +278,156 @@ struct ReceiptsListView: View {
     }
 }
 
-// MARK: - Folder Tab
+// MARK: - Hermès Tab
 
-struct FolderTab: View {
+struct HermesTab: View {
     let name: String
-    let icon: String
-    let color: Color
-    let count: Int
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.caption)
+            VStack(spacing: 10) {
+                Text(name.uppercased())
+                    .font(.system(.caption2, design: .default, weight: isSelected ? .semibold : .medium))
+                    .tracking(1.5)
+                    .foregroundStyle(isSelected ? AppTheme.orange : AppTheme.gray)
                 
-                Text(name)
-                    .font(.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
-                
-                Text("\(count)")
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(isSelected ? color.opacity(0.2) : Color.gray.opacity(0.2))
-                    .clipShape(Capsule())
+                // Animated underline
+                Capsule()
+                    .fill(AppTheme.orange)
+                    .frame(height: 2)
+                    .scaleX(isSelected ? 1 : 0)
+                    .opacity(isSelected ? 1 : 0)
             }
-            .foregroundStyle(isSelected ? color : .secondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(isSelected ? color.opacity(0.15) : Color(.secondarySystemBackground))
-            .clipShape(Capsule())
+            .padding(.horizontal, 16)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(PlainButtonStyle())
+        .animation(AppTheme.springAnimation, value: isSelected)
     }
 }
 
-// MARK: - Receipt Card
+// Scale X modifier
+extension View {
+    func scaleX(_ scale: CGFloat) -> some View {
+        self.scaleEffect(x: scale, y: 1, anchor: .center)
+    }
+}
 
-struct ReceiptCard: View {
+// MARK: - Hermès Receipt Card
+
+struct HermesReceiptCard: View {
     let receipt: Receipt
     
     @State private var thumbnailImage: UIImage?
+    @State private var isLoading = true
+    @State private var isPressed = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Thumbnail with page count badge
+        VStack(alignment: .leading, spacing: 0) {
+            // Image
             ZStack(alignment: .topTrailing) {
-                if let image = thumbnailImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 140)
-                        .clipped()
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 140)
-                        .overlay {
-                            Image(systemName: "doc.text")
-                                .font(.largeTitle)
-                                .foregroundStyle(.secondary)
-                        }
+                Group {
+                    if let image = thumbnailImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                    } else {
+                        Rectangle()
+                            .fill(AppTheme.offWhite)
+                            .overlay {
+                                if isLoading {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .tint(AppTheme.gray.opacity(0.5))
+                                } else {
+                                    Image(systemName: "doc.text")
+                                        .font(.system(size: 24, weight: .ultraLight))
+                                        .foregroundStyle(AppTheme.gray.opacity(0.5))
+                                }
+                            }
+                    }
                 }
+                .frame(height: 150)
+                .clipped()
                 
                 // Multi-page badge
                 if receipt.isMultiPage {
-                    Text("\(receipt.pageCount)")
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.accentColor)
-                        .clipShape(Capsule())
-                        .padding(6)
-                }
-                
-                // Folder indicator
-                if let folder = receipt.folder {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Image(systemName: folder.iconName)
-                                .font(.caption2)
-                                .foregroundStyle(.white)
-                                .padding(4)
-                                .background(folder.color)
-                                .clipShape(Circle())
-                                .padding(6)
-                            Spacer()
-                        }
+                    HStack(spacing: 3) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 8, weight: .semibold))
+                        Text("\(receipt.pageCount)")
+                            .font(.system(.caption2, design: .rounded, weight: .semibold))
                     }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(AppTheme.orange)
+                            .shadow(color: AppTheme.orange.opacity(0.3), radius: 4, y: 2)
+                    )
+                    .padding(10)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // Details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(receipt.displayName)
-                    .font(.headline)
+            // Details - fixed height for consistency
+            VStack(alignment: .leading, spacing: 6) {
+                Text(receipt.displayName.uppercased())
+                    .font(.system(.caption2, design: .default, weight: .semibold))
+                    .tracking(0.8)
                     .lineLimit(1)
+                    .foregroundStyle(AppTheme.black)
                 
-                HStack {
+                HStack(alignment: .bottom) {
                     Text(receipt.formattedDate)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(.caption2))
+                        .foregroundStyle(AppTheme.gray)
                     
                     Spacer()
                     
                     Text(receipt.formattedTotal)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.green)
+                        .font(.system(.subheadline, design: .default, weight: .semibold))
+                        .foregroundStyle(AppTheme.orange)
+                }
+                
+                // Folder indicator - always visible for consistent height
+                HStack(spacing: 5) {
+                    if let folder = receipt.folder {
+                        Circle()
+                            .fill(folder.color)
+                            .frame(width: 5, height: 5)
+                        Text(folder.name)
+                            .font(.system(.caption2))
+                            .foregroundStyle(AppTheme.gray)
+                    } else {
+                        // Invisible placeholder to maintain height
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 5, height: 5)
+                        Text(" ")
+                            .font(.system(.caption2))
+                    }
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(AppTheme.white)
         }
-        .padding(8)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+        .background(AppTheme.white)
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .shadow(
+            color: isPressed ? AppTheme.elevatedShadowColor : AppTheme.cardShadowColor,
+            radius: isPressed ? AppTheme.elevatedShadowRadius : AppTheme.cardShadowRadius,
+            y: isPressed ? AppTheme.elevatedShadowY : AppTheme.cardShadowY
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(AppTheme.quickAnimation, value: isPressed)
+        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
         .task {
             await loadThumbnail()
         }
@@ -378,10 +440,15 @@ struct ReceiptCard: View {
                 size: CGSize(width: 200, height: 200)
             )
             await MainActor.run {
-                self.thumbnailImage = image
+                withAnimation(.easeOut(duration: 0.3)) {
+                    self.thumbnailImage = image
+                    self.isLoading = false
+                }
             }
         } catch {
-            // Silently fail - placeholder will show
+            await MainActor.run {
+                isLoading = false
+            }
         }
     }
 }
