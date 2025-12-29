@@ -56,6 +56,9 @@ struct ReceiptsListView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    // Custom header
+                    customHeaderView
+                    
                     // Folder tabs
                     folderTabsView
                     
@@ -71,32 +74,9 @@ struct ReceiptsListView: View {
                     }
                 }
             }
-            .navigationTitle(showUnfiledOnly ? "Unfiled" : (selectedFolder?.name ?? "Receipts"))
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search")
+            .navigationBarHidden(true)
             .navigationDestination(item: $selectedReceipt) { receipt in
                 ReceiptDetailView(receipt: receipt)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showFolderManagement = true
-                    } label: {
-                        Image(systemName: "folder")
-                            .font(.system(size: 16, weight: .light))
-                            .foregroundStyle(AppTheme.black)
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddReceipt = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .light))
-                            .foregroundStyle(AppTheme.orange)
-                    }
-                }
             }
             .sheet(isPresented: $showAddReceipt) {
                 AddReceiptView(initialFolder: selectedFolder)
@@ -108,6 +88,39 @@ struct ReceiptsListView: View {
             }
         }
         .tint(AppTheme.orange)
+    }
+    
+    // MARK: - Custom Header
+    
+    private var customHeaderView: some View {
+        HStack {
+            Button {
+                showFolderManagement = true
+            } label: {
+                Image(systemName: "folder")
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(AppTheme.black)
+                    .padding(12)
+                    .background(Circle().fill(AppTheme.white))
+                    .shadow(color: AppTheme.cardShadowColor, radius: 4, y: 2)
+            }
+            
+            Spacer()
+            
+            Button {
+                showAddReceipt = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(AppTheme.orange)
+                    .padding(12)
+                    .background(Circle().fill(AppTheme.white))
+                    .shadow(color: AppTheme.cardShadowColor, radius: 4, y: 2)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
     
     // MARK: - Folder Tabs
