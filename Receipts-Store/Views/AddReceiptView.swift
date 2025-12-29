@@ -449,7 +449,10 @@ struct AddReceiptView: View {
                 .padding(.top, 8)
             }
             
-            Spacer()
+            // Only add spacer when not showing parsed results
+            if !hasProcessed {
+                Spacer()
+            }
             
             // Action buttons
             if !isProcessing {
