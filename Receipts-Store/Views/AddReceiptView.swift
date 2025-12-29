@@ -102,6 +102,8 @@ struct AddReceiptView: View {
     
     // MARK: - Mode Selection View
     
+    @State private var iconBounce = false
+    
     private var modeSelectionView: some View {
         ZStack {
             AppTheme.cream.ignoresSafeArea()
@@ -109,83 +111,57 @@ struct AddReceiptView: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                // Elegant icon
-                Image(systemName: "doc.text")
-                    .font(.system(size: 56, weight: .ultraLight))
-                    .foregroundStyle(AppTheme.orange)
-                    .padding(.bottom, 24)
+                // Animated elegant icon
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.orangeLight)
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(iconBounce ? 1.05 : 1.0)
+                    
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(AppTheme.orange)
+                }
+                .padding(.bottom, 32)
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                        iconBounce = true
+                    }
+                }
                 
                 Text("ADD RECEIPT")
-                    .font(.system(.caption, design: .default, weight: .medium))
-                    .tracking(3)
+                    .font(.system(.caption, design: .default, weight: .semibold))
+                    .tracking(4)
                     .foregroundStyle(AppTheme.gray)
                     .padding(.bottom, 8)
                 
                 Text("Choose your capture method")
-                    .font(.system(.body, design: .serif))
+                    .font(.system(.title3, design: .serif))
                     .foregroundStyle(AppTheme.black)
                 
                 Spacer()
                 
-                VStack(spacing: 16) {
-                    // Single Page
-                    Button {
-                        captureMode = .single
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("SINGLE PAGE")
-                                    .font(.system(.caption2, design: .default, weight: .medium))
-                                    .tracking(1.5)
-                                    .foregroundStyle(AppTheme.black)
-                                
-                                Text("Quick capture with instant processing")
-                                    .font(.system(.caption))
-                                    .foregroundStyle(AppTheme.gray)
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .light))
-                                .foregroundStyle(AppTheme.gray)
+                VStack(spacing: 12) {
+                    // Single Page - Card
+                    ModeSelectionCard(
+                        icon: "doc",
+                        title: "SINGLE PAGE",
+                        subtitle: "Quick capture with instant processing"
+                    ) {
+                        withAnimation(AppTheme.springAnimation) {
+                            captureMode = .single
                         }
-                        .padding(20)
-                        .background(AppTheme.white)
-                        .overlay(
-                            Rectangle()
-                                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
-                        )
                     }
                     
-                    // Multi Page
-                    Button {
-                        captureMode = .multi
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("MULTI-PAGE")
-                                    .font(.system(.caption2, design: .default, weight: .medium))
-                                    .tracking(1.5)
-                                    .foregroundStyle(AppTheme.black)
-                                
-                                Text("Add all pages, then process together")
-                                    .font(.system(.caption))
-                                    .foregroundStyle(AppTheme.gray)
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .light))
-                                .foregroundStyle(AppTheme.gray)
+                    // Multi Page - Card
+                    ModeSelectionCard(
+                        icon: "doc.on.doc",
+                        title: "MULTI-PAGE",
+                        subtitle: "Add all pages, then process together"
+                    ) {
+                        withAnimation(AppTheme.springAnimation) {
+                            captureMode = .multi
                         }
-                        .padding(20)
-                        .background(AppTheme.white)
-                        .overlay(
-                            Rectangle()
-                                .strokeBorder(AppTheme.lightGray, lineWidth: 1)
-                        )
                     }
                     
                     // Folder selection
@@ -851,6 +827,67 @@ struct AddReceiptView: View {
         }
     }
 }
+
+// MARK: - Mode Selection Card
+
+struct ModeSelectionCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(AppTheme.cream)
+                        .frame(width: 48, height: 48)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .light))
+                        .foregroundStyle(AppTheme.orange)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(.caption, design: .default, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(AppTheme.black)
+                    
+                    Text(subtitle)
+                        .font(.system(.caption))
+                        .foregroundStyle(AppTheme.gray)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(AppTheme.orange)
+            }
+            .padding(16)
+            .background(AppTheme.white)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .shadow(
+                color: isPressed ? AppTheme.elevatedShadowColor : AppTheme.cardShadowColor,
+                radius: isPressed ? AppTheme.elevatedShadowRadius : AppTheme.cardShadowRadius,
+                y: isPressed ? AppTheme.elevatedShadowY : AppTheme.cardShadowY
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
+            withAnimation(AppTheme.quickAnimation) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
 #Preview {
     AddReceiptView()
         .modelContainer(for: Receipt.self, inMemory: true)

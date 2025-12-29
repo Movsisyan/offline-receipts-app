@@ -140,15 +140,21 @@ struct FolderRow: View {
     let folder: Folder
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: folder.iconName)
-                .font(.system(size: 22, weight: .light))
-                .foregroundStyle(folder.color)
-                .frame(width: 32)
+        HStack(spacing: 14) {
+            // Icon with colored background
+            ZStack {
+                Circle()
+                    .fill(folder.color.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: folder.iconName)
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(folder.color)
+            }
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(folder.name)
-                    .font(.subheadline)
+                    .font(.system(.subheadline, design: .default, weight: .medium))
                     .foregroundStyle(AppTheme.black)
                 
                 Text("\(folder.receiptCount) receipt\(folder.receiptCount == 1 ? "" : "s")")
@@ -158,11 +164,22 @@ struct FolderRow: View {
             
             Spacer()
             
+            // Count badge
+            if folder.receiptCount > 0 {
+                Text("\(folder.receiptCount)")
+                    .font(.system(.caption2, design: .rounded, weight: .medium))
+                    .foregroundStyle(AppTheme.gray)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(AppTheme.cream)
+                    .clipShape(Capsule())
+            }
+            
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .light))
-                .foregroundStyle(AppTheme.gray)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(AppTheme.gray.opacity(0.5))
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 }
 

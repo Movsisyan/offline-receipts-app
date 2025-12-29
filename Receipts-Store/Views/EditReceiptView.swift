@@ -137,11 +137,11 @@ struct EditReceiptView: View {
                 .foregroundStyle(AppTheme.gray)
             
             VStack(spacing: 0) {
-                HermesTextField(label: "Name", text: $storeName)
+                HermesRowTextField(label: "Name", text: $storeName)
                 PremiumDivider()
-                HermesTextField(label: "Address", text: $storeAddress)
+                HermesRowTextField(label: "Address", text: $storeAddress)
                 PremiumDivider()
-                HermesTextField(label: "Phone", text: $storePhone, keyboardType: .phonePad)
+                HermesRowTextField(label: "Phone", text: $storePhone, keyboardType: .phonePad)
             }
         }
         .padding(20)
@@ -185,7 +185,7 @@ struct EditReceiptView: View {
                 }
                 
                 PremiumDivider()
-                HermesTextField(label: "Receipt #", text: $transactionNumber)
+                HermesRowTextField(label: "Receipt #", text: $transactionNumber)
                 
                 PremiumDivider()
                 
@@ -222,11 +222,11 @@ struct EditReceiptView: View {
                 .foregroundStyle(AppTheme.gray)
             
             VStack(spacing: 0) {
-                HermesCurrencyField(label: "Subtotal", value: $subtotalString)
+                HermesRowCurrencyField(label: "Subtotal", value: $subtotalString)
                 PremiumDivider()
-                HermesCurrencyField(label: "Tax", value: $taxString)
+                HermesRowCurrencyField(label: "Tax", value: $taxString)
                 PremiumDivider()
-                HermesCurrencyField(label: "Tips", value: $tipsString)
+                HermesRowCurrencyField(label: "Tips", value: $tipsString)
                 PremiumDivider()
                 
                 // Total with emphasis
@@ -284,7 +284,7 @@ struct EditReceiptView: View {
                 
                 if paymentMethod == .creditCard || paymentMethod == .debitCard {
                     PremiumDivider()
-                    HermesTextField(label: "Last 4 Digits", text: $cardLastFour, keyboardType: .numberPad)
+                    HermesRowTextField(label: "Last 4 Digits", text: $cardLastFour, keyboardType: .numberPad)
                 }
             }
         }
@@ -431,9 +431,9 @@ struct EditReceiptView: View {
     }
 }
 
-// MARK: - Hermès Text Field
+// MARK: - Hermès Row Text Field
 
-struct HermesTextField: View {
+struct HermesRowTextField: View {
     let label: String
     @Binding var text: String
     var keyboardType: UIKeyboardType = .default
@@ -454,9 +454,9 @@ struct HermesTextField: View {
     }
 }
 
-// MARK: - Hermès Currency Field
+// MARK: - Hermès Row Currency Field
 
-struct HermesCurrencyField: View {
+struct HermesRowCurrencyField: View {
     let label: String
     @Binding var value: String
     

@@ -95,100 +95,112 @@ struct ReceiptDetailView: View {
     // MARK: - Sections
     
     private var receiptImageSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             // Image with page navigation
             ZStack {
                 if !loadedImages.isEmpty && currentPageIndex < loadedImages.count {
                     Image(uiImage: loadedImages[currentPageIndex])
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(maxHeight: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: .black.opacity(0.1), radius: 12, y: 6)
+                        .frame(maxHeight: 280)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .shadow(color: .black.opacity(0.08), radius: 16, y: 8)
                         .onTapGesture {
-                            showFullScreenImage = true
+                            withAnimation(AppTheme.springAnimation) {
+                                showFullScreenImage = true
+                            }
                         }
                         .overlay(alignment: .bottomTrailing) {
-                            // Zoom hint
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                    .font(.caption2)
-                                Text("Tap to zoom")
-                                    .font(.caption2)
-                            }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(Color.black.opacity(0.5)))
-                            .padding(12)
+                            // Elegant zoom hint
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.white)
+                                .padding(8)
+                                .background(Circle().fill(Color.black.opacity(0.4)))
+                                .padding(12)
                         }
+                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
                 } else {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color(.tertiarySystemFill))
-                        .frame(height: 200)
-                        .overlay {
-                            VStack(spacing: 8) {
+                    // Elegant loading state
+                    VStack(spacing: 16) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(AppTheme.offWhite)
+                                .frame(height: 200)
+                            
+                            VStack(spacing: 12) {
                                 ProgressView()
-                                Text("Loading...")
-                                    .font(.caption)
-                                    .foregroundStyle(AppTheme.textTertiary)
+                                    .scaleEffect(0.9)
+                                    .tint(AppTheme.orange.opacity(0.6))
+                                
+                                Text("LOADING")
+                                    .font(.system(.caption2, design: .default, weight: .medium))
+                                    .tracking(2)
+                                    .foregroundStyle(AppTheme.gray)
                             }
                         }
+                    }
                 }
                 
-                // Page navigation arrows
+                // Refined page navigation arrows
                 if receipt.isMultiPage && !loadedImages.isEmpty {
                     HStack {
                         Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(AppTheme.springAnimation) {
                                 currentPageIndex = max(0, currentPageIndex - 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.left.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .padding(14)
+                                .background(Circle().fill(Color.black.opacity(0.5)))
                         }
                         .disabled(currentPageIndex == 0)
-                        .opacity(currentPageIndex == 0 ? 0.3 : 1)
+                        .opacity(currentPageIndex == 0 ? 0 : 1)
                         
                         Spacer()
                         
                         Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(AppTheme.springAnimation) {
                                 currentPageIndex = min(receipt.pageCount - 1, currentPageIndex + 1)
                             }
                         } label: {
-                            Image(systemName: "chevron.right.circle.fill")
-                                .font(.title)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 4)
+                                .padding(14)
+                                .background(Circle().fill(Color.black.opacity(0.5)))
                         }
                         .disabled(currentPageIndex == receipt.pageCount - 1)
-                        .opacity(currentPageIndex == receipt.pageCount - 1 ? 0.3 : 1)
+                        .opacity(currentPageIndex == receipt.pageCount - 1 ? 0 : 1)
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 12)
                 }
             }
             
-            // Page indicator
+            // Elegant page indicator
             if receipt.isMultiPage {
-                HStack(spacing: 6) {
-                    ForEach(0..<receipt.pageCount, id: \.self) { index in
-                        Capsule()
-                            .fill(index == currentPageIndex ? AppTheme.accent : Color.gray.opacity(0.3))
-                            .frame(width: index == currentPageIndex ? 20 : 8, height: 8)
-                            .onTapGesture {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    currentPageIndex = index
+                VStack(spacing: 10) {
+                    HStack(spacing: 6) {
+                        ForEach(0..<receipt.pageCount, id: \.self) { index in
+                            Circle()
+                                .fill(index == currentPageIndex ? AppTheme.orange : AppTheme.gray.opacity(0.25))
+                                .frame(width: index == currentPageIndex ? 8 : 6, height: index == currentPageIndex ? 8 : 6)
+                                .animation(AppTheme.springAnimation, value: currentPageIndex)
+                                .onTapGesture {
+                                    withAnimation(AppTheme.springAnimation) {
+                                        currentPageIndex = index
+                                    }
                                 }
-                            }
+                        }
                     }
+                    
+                    Text("PAGE \(currentPageIndex + 1) OF \(receipt.pageCount)")
+                        .font(.system(.caption2, design: .default, weight: .medium))
+                        .tracking(1.5)
+                        .foregroundStyle(AppTheme.gray)
                 }
-                
-                Text("Page \(currentPageIndex + 1) of \(receipt.pageCount)")
-                    .font(.system(.caption, design: .rounded, weight: .medium))
-                    .foregroundStyle(AppTheme.textSecondary)
             }
         }
     }
